@@ -1,0 +1,78 @@
+{
+  "name": "cluster_board_be",
+  "version": "0.0.1",
+  "description": "backend for cluster board application",
+  "homepage": "https://github.com/shivetay/clusterBoard_be#readme",
+  "bugs": {
+    "url": "https://github.com/shivetay/clusterBoard_be/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shivetay/clusterBoard_be.git"
+  },
+  "license": "ISC",
+  "author": "Łukasz Dawidowicz",
+  "type": "module",
+  "main": "server.ts",
+   "scripts": {
+    "start": "nodemon --exec ts-node src/server.ts",
+    "dev": "nodemon --exec ts-node src/server.ts",
+    "prod": "cross-env NODE_ENV=production nodemon --exec ts-node src/server.ts",
+    "build": "tsc",
+    "start:prod": "cross-env NODE_ENV=production node dist/server.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepare": "husky",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "commit": "cz",
+    "commit:retry": "git commit --amend --no-edit"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "express-mongo-sanitize": "^2.2.0",
+    "express-xss-sanitizer": "^2.0.1",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.19.1",
+    "morgan": "^1.10.1",
+    "validator": "^13.15.15"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.2.6",
+    "@commitlint/cli": "^20.1.0",
+    "@commitlint/config-conventional": "^20.0.0",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
+    "@types/express-xss-sanitizer": "^2.0.0",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/morgan": "^1.9.10",
+    "@types/node": "^24.8.0",
+    "@types/validator": "^13.15.3",
+    "commitizen": "^4.3.1",
+    "cross-env": "^10.1.0",
+    "cz-conventional-changelog": "^3.3.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.4",
+    "nodemon": "^3.1.10",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  },
+  "lint-staged": {
+    "*.{js,ts,jsx,tsx}": [
+      "biome check --write",
+      "biome format --write"
+    ],
+    "*.{json,md}": [
+      "biome format --write"
+    ]
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
+  }
+}
