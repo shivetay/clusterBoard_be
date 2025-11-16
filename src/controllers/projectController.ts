@@ -23,6 +23,7 @@ export const getAllProjects = async (
     });
   } catch (error) {
     next(error);
+    return;
   }
 };
 
@@ -49,6 +50,7 @@ export const getProjectById = async (
     });
   } catch (error) {
     next(error);
+    return;
   }
 };
 
@@ -84,6 +86,7 @@ export const createProject = async (
     });
   } catch (error) {
     next(error);
+    return;
   }
 };
 
@@ -112,6 +115,11 @@ export const updateProject = async (
       { new: true, runValidators: true, current_user: req.body.current_user },
     );
 
+    if (!updatedProject) {
+      next(new AppError('PROJECT_NOT_FOUND', STATUSES.NOT_FOUND));
+      return;
+    }
+
     res.status(STATUSES.SUCCESS).json({
       status: 'success',
       data: {
@@ -121,6 +129,7 @@ export const updateProject = async (
     });
   } catch (error) {
     next(error);
+    return;
   }
 };
 
@@ -139,7 +148,12 @@ export const deleteProject = async (
       return;
     }
 
-    await ClusterProject.findByIdAndDelete(id);
+    const deletedProject = await ClusterProject.findByIdAndDelete(id);
+
+    if (!deletedProject) {
+      next(new AppError('PROJECT_NOT_FOUND', STATUSES.NOT_FOUND));
+      return;
+    }
 
     res.status(STATUSES.NO_CONTENT).json({
       status: 'success',
@@ -147,6 +161,7 @@ export const deleteProject = async (
     });
   } catch (error) {
     next(error);
+    return;
   }
 };
 
@@ -172,6 +187,11 @@ export const changeProjectStatus = async (
       removeUnmutableData,
       { new: true, runValidators: true, current_user: req.body.current_user },
     );
+
+    if (!updatedStatus) {
+      next(new AppError('PROJECT_NOT_FOUND', STATUSES.NOT_FOUND));
+      return;
+    }
 
     res.status(STATUSES.SUCCESS).json({
       status: 'success',
