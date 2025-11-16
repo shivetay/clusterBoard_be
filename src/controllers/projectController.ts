@@ -155,7 +155,7 @@ export const deleteProject = async (
       return;
     }
 
-    res.status(STATUSES.NO_CONTENT).json({
+    res.status(STATUSES.SUCCESS).json({
       status: 'success',
       message: 'PROJECT_DELETED',
     });
