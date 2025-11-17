@@ -11,8 +11,6 @@ export interface IUserSchema extends Document {
   password_changed_at: Date;
   password_reset_token: string;
   password_reset_expires: Date;
-  created_at: Date;
-  updated_at: Date;
   comparePassword(
     candidatePassword: string,
     userPassword: string,

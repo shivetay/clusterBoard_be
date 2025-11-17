@@ -62,7 +62,6 @@ const userSchema = new mongoose.Schema<IUserSchema>(
     },
     password_changed_at: {
       type: Date,
-      default: Date.now,
     },
     password_reset_token: {
       type: String,
@@ -71,14 +70,6 @@ const userSchema = new mongoose.Schema<IUserSchema>(
     password_reset_expires: {
       type: Date,
       default: null,
-    },
-    created_at: {
-      type: Date,
-      default: Date.now,
-    },
-    updated_at: {
-      type: Date,
-      default: Date.now,
     },
   },
   {
@@ -94,12 +85,6 @@ userSchema.virtual('cluster_projects', {
   foreignField: 'owner',
   localField: '_id',
   justOne: false,
-});
-
-// Pre-save middleware to update updated_at field
-userSchema.pre('save', function (next) {
-  this.updated_at = new Date();
-  next();
 });
 
 // Password compare and hash
