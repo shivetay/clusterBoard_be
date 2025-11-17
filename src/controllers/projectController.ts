@@ -40,6 +40,7 @@ export const getProjectById = async (
 
     if (!project) {
       next(new AppError('PROJECT_NOT_FOUND', STATUSES.NOT_FOUND));
+      return;
     }
 
     res.status(STATUSES.SUCCESS).json({
@@ -148,7 +149,9 @@ export const deleteProject = async (
       return;
     }
 
-    const deletedProject = await ClusterProject.findByIdAndDelete(id);
+    const deletedProject = await ClusterProject.findByIdAndDelete(id, {
+      current_user: req.body.current_user,
+    });
 
     if (!deletedProject) {
       next(new AppError('PROJECT_NOT_FOUND', STATUSES.NOT_FOUND));
@@ -183,7 +186,7 @@ export const changeProjectStatus = async (
     const removeUnmutableData = filterAllowedFields(req.body, 'status');
 
     const updatedStatus = await ClusterProject.findByIdAndUpdate(
-      req.params.id,
+      id,
       removeUnmutableData,
       { new: true, runValidators: true, current_user: req.body.current_user },
     );
@@ -202,5 +205,6 @@ export const changeProjectStatus = async (
     });
   } catch (error) {
     next(error);
+    return;
   }
 };

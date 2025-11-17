@@ -8,10 +8,10 @@ const router: Router = express.Router();
 // GET all users
 router.route('/').get(getAllUsers);
 
-// GET user by :id
-router.route('/:id').get(getUserById);
-
 // POST dummy create user
 router.route('/create').post(createUser);
+
+// GET user by :id
+router.route('/:id').get(getUserById);
 
 export default router;
