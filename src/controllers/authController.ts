@@ -20,7 +20,7 @@ export const createUser = async (
       role,
     });
 
-    res.status(STATUSES.SUCCESS).json({
+    res.status(STATUSES.CREATED).json({
       status: 'success',
       data: {
         user: newUser,

@@ -10,8 +10,9 @@ import { STATUSES } from './utils';
 import AppError from './utils/appError';
 
 const app: express.Application = express();
-// Middleware
 
+// Middleware
+// TODO add proper logger pino/winston
 app.use(helmet());
 if (process.env.NODE_ENV === 'development') {
   // biome-ignore lint/suspicious/noConsole: console log for development mode

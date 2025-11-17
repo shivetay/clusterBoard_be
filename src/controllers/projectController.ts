@@ -111,7 +111,7 @@ export const updateProject = async (
     );
 
     const updatedProject = await ClusterProject.findByIdAndUpdate(
-      req.params.id,
+      id,
       removeUnmutableData,
       { new: true, runValidators: true, current_user: req.body.current_user },
     );

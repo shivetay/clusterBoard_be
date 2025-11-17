@@ -34,7 +34,7 @@ const userSchema = new mongoose.Schema<IUserSchema>(
     },
     role: {
       type: String,
-      enum: ['investor', 'cluster_owner', 'cluster_good', 'team_member'],
+      enum: ['investor', 'cluster_owner', 'cluster_god', 'team_member'],
       default: 'cluster_owner',
     },
     password: {

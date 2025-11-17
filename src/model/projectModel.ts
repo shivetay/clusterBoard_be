@@ -7,6 +7,7 @@ const PROJECT_STATUS_VALUES = [
   'active',
   'completed',
   'cancelled',
+  'on_hold',
 ] as const;
 
 const MIN_PROJECT_NAME_LENGTH = 3;
@@ -66,7 +67,7 @@ clusterProjectSchema.pre('findOneAndDelete', function (next) {
     return next();
   }
 
-  // filter so only owner can update
+  // filter so only owner can delete
   const filterData = this.getFilter();
   this.setQuery({ ...filterData, owner: currentUser });
 

@@ -22,5 +22,5 @@ export interface IUserSchema extends Document {
 export type TUserRoleType =
   | 'investor'
   | 'cluster_owner'
-  | 'cluster_good'
+  | 'cluster_god'
   | 'team_member';
