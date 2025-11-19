@@ -5,3 +5,6 @@ dev.env
 prod.env
 
 /dist
+
+#Ignore cursor AI rules
+.cursor\rules\codacy.mdc
