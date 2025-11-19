@@ -6,7 +6,7 @@ on:
   workflow_dispatch: # Allows manual trigger from GitHub UI
     inputs:
       branch:
-        description: "Branch to deploy"
+        description: "Branch to deploy (leave empty to deploy current branch)"
         required: false
         default: ""
 
@@ -14,12 +14,20 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - name: Determine branch to deploy
+        id: branch
+        run: |
+          if [ -z "${{ github.event.inputs.branch }}" ]; then
+            echo "branch=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          else
+            echo "branch=${{ github.event.inputs.branch }}" >> $GITHUB_OUTPUT
+          fi
       - uses: actions/checkout@v2
         with:
-          ref: ${{ github.event.inputs.branch || github.ref_name }}
+          ref: ${{ steps.branch.outputs.branch }}
       - uses: akhileshns/heroku-deploy@v3.12.12
         with:
-          branch: ${{ github.event.inputs.branch || github.ref_name }}
+          branch: ${{ steps.branch.outputs.branch }}
           heroku_api_key: ${{secrets.HEROKU_API_KEY}}
           heroku_app_name: "cluster-board-dev"
           heroku_email: ${{secrets.HEROKU_EMAIL}}
