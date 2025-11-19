@@ -53,6 +53,29 @@ export const getProjectById = async (
   }
 };
 
+// GET all user's projects (where user is owner or investor)
+export const getAllUserProjects = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { id } = req.params;
+    const projects = await ClusterProject.find({
+      $or: [{ owner: id }, { investors: id }],
+    });
+    res.status(STATUSES.SUCCESS).json({
+      status: 'success',
+      results: projects?.length,
+      data: {
+        projects: projects || [],
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // POST create project
 
 export const createProject = async (

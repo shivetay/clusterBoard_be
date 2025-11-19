@@ -5,6 +5,7 @@ import {
   createProject,
   deleteProject,
   getAllProjects,
+  getAllUserProjects,
   getProjectById,
   updateProject,
 } from '../controllers/projectController';
@@ -16,6 +17,9 @@ router.route('/').get(getAllProjects);
 
 // POST create project
 router.route('/create').post(createProject);
+
+// GET all projects for a user (owner or investor)
+router.route('/user/:id').get(getAllUserProjects);
 
 // GET, PATCH, DELETE project by :id
 router
