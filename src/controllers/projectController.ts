@@ -61,14 +61,22 @@ export const getAllUserProjects = async (
 ) => {
   try {
     const { id } = req.params;
+
+    const user = await User.findById(id);
+
+    if (!user) {
+      next(new AppError('USER_NOT_FOUND', STATUSES.NOT_FOUND));
+      return;
+    }
+
     const projects = await ClusterProject.find({
       $or: [{ owner: id }, { investors: id }],
     });
     res.status(STATUSES.SUCCESS).json({
       status: 'success',
-      results: projects?.length,
+      results: projects.length,
       data: {
-        projects: projects || [],
+        projects,
       },
     });
   } catch (error) {
