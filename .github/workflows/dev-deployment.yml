@@ -1,0 +1,26 @@
+name: Deploy to dev
+on:
+  push:
+    branches:
+      - "**" # Triggers on push to any branch
+  workflow_dispatch: # Allows manual trigger from GitHub UI
+    inputs:
+      branch:
+        description: "Branch to deploy"
+        required: false
+        default: ""
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.inputs.branch || github.ref_name }}
+      - uses: akhileshns/heroku-deploy@v3.12.12
+        with:
+          branch: ${{ github.event.inputs.branch || github.ref_name }}
+          heroku_api_key: ${{secrets.HEROKU_API_KEY}}
+          heroku_app_name: "cluster-board-dev"
+          heroku_email: ${{secrets.HEROKU_EMAIL}}
+          # HEROKU_API_KEY and HEROKU_EMAIL will need to be set in repository secrets
