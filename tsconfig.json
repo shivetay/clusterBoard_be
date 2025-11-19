@@ -15,7 +15,7 @@
     // "lib": ["esnext"],
     // "types": ["node"],
     // and npm install -D @types/node
-    "ignoreDeprecations": "6.0",
+    // "ignoreDeprecations": "5.0", // Uncomment if you need to ignore TypeScript 5.0 deprecations
     // Other Outputs
     "sourceMap": true,
     "declaration": true,
