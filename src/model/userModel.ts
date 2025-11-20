@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import mongoose from 'mongoose';
 import validator from 'validator';
@@ -39,7 +40,9 @@ const userSchema = new mongoose.Schema<IUserSchema>(
     },
     password: {
       type: String,
-      required: [true, 'Please provide a password'],
+      required: function (this: IUserSchema) {
+        return this.oauth_provider === 'local' || !this.oauth_provider;
+      },
       minlength: [
         MIN_PASSWORD_LENGTH,
         'Password must be at least 8 characters long',
@@ -52,7 +55,9 @@ const userSchema = new mongoose.Schema<IUserSchema>(
     },
     password_confirm: {
       type: String,
-      required: [true, 'Please confirm your password'],
+      required: function (this: IUserSchema) {
+        return this.oauth_provider === 'local' || !this.oauth_provider;
+      },
       validate: {
         validator: function (this: IUserSchema, value: string) {
           return value === this.password;
@@ -70,6 +75,25 @@ const userSchema = new mongoose.Schema<IUserSchema>(
     password_reset_expires: {
       type: Date,
       default: null,
+    },
+    oauth_provider: {
+      type: String,
+      enum: ['local', 'google', 'facebook'],
+      default: 'local',
+    },
+    oauth_id: {
+      type: String,
+      default: null,
+    },
+    oauth_access_token: {
+      type: String,
+      default: null,
+      select: false,
+    },
+    is_active: {
+      type: Boolean,
+      default: true,
+      select: false,
     },
   },
   {
@@ -110,6 +134,37 @@ userSchema.methods.comparePassword = async (
 ) => {
   return await bcrypt.compare(candidatePassword, userPassword);
 };
+
+userSchema.methods.changedPasswordAfter = function (JWTTimestamp: number) {
+  if (this.password_changed_at) {
+    const changedTimestamp = Math.floor(
+      this.password_changed_at.getTime() / 1000,
+    );
+    return JWTTimestamp < changedTimestamp;
+  }
+  return false;
+};
+
+userSchema.methods.createPasswordResetToken = function () {
+  const resetToken = crypto.randomBytes(32).toString('hex');
+
+  this.password_reset_token = crypto
+    .createHash('sha256')
+    .update(resetToken)
+    .digest('hex');
+
+  this.password_reset_expires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+  return resetToken;
+};
+
+userSchema.pre('save', function (next) {
+  if (!this.isModified('password') || this.isNew) {
+    return next();
+  }
+  this.password_changed_at = new Date(Date.now() - 1000);
+  next();
+});
 
 const User = mongoose.model<IUserSchema>('User', userSchema);
 
