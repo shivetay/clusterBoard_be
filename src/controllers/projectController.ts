@@ -62,6 +62,19 @@ export const getAllUserProjects = async (
   try {
     const { id } = req.params;
 
+    if (!req.user) {
+      next(new AppError('AUTH_ERROR_NOT_LOGGED_IN', STATUSES.UNAUTHORIZED));
+      return;
+    }
+
+    const isSelf = req.user.id === id;
+    const isSuperUser = req.user.role === 'cluster_god';
+
+    if (!isSelf && !isSuperUser) {
+      next(new AppError('AUTH_ERROR_FORBIDDEN', STATUSES.FORBIDDEN));
+      return;
+    }
+
     const user = await User.findById(id);
 
     if (!user) {
@@ -92,9 +105,17 @@ export const createProject = async (
   next: NextFunction,
 ) => {
   try {
+    if (!req.user) {
+      next(new AppError('AUTH_ERROR_NOT_LOGGED_IN', STATUSES.UNAUTHORIZED));
+      return;
+    }
+
     const { project_name, owner, investors } = req.body;
 
-    const checkUserId = await User.findById(owner);
+    const ownerId =
+      req.user.role === 'cluster_god' && owner ? owner : req.user.id;
+
+    const checkUserId = await User.findById(ownerId);
 
     if (!checkUserId) {
       next(new AppError('AUTH_ERROR_USER_NOT_FOUND', STATUSES.NOT_FOUND));
@@ -103,7 +124,7 @@ export const createProject = async (
 
     const newProject = await ClusterProject.create({
       project_name,
-      owner,
+      owner: ownerId,
       investors,
     });
 
@@ -125,6 +146,11 @@ export const updateProject = async (
   next: NextFunction,
 ) => {
   try {
+    if (!req.user) {
+      next(new AppError('AUTH_ERROR_NOT_LOGGED_IN', STATUSES.UNAUTHORIZED));
+      return;
+    }
+
     const { id } = req.params;
 
     const removeUnmutableData = filterAllowedFields(
@@ -133,10 +159,19 @@ export const updateProject = async (
       'investors',
     );
 
+    const updateOptions =
+      req.user.role === 'cluster_god'
+        ? { new: true, runValidators: true }
+        : {
+            new: true,
+            runValidators: true,
+            current_user: req.user.id,
+          };
+
     const updatedProject = await ClusterProject.findByIdAndUpdate(
       id,
       removeUnmutableData,
-      { new: true, runValidators: true, current_user: req.body.current_user },
+      updateOptions,
     );
 
     if (!updatedProject) {
@@ -164,11 +199,22 @@ export const deleteProject = async (
   next: NextFunction,
 ) => {
   try {
+    if (!req.user) {
+      next(new AppError('AUTH_ERROR_NOT_LOGGED_IN', STATUSES.UNAUTHORIZED));
+      return;
+    }
+
     const { id } = req.params;
 
-    const deletedProject = await ClusterProject.findByIdAndDelete(id, {
-      current_user: req.body.current_user,
-    });
+    const deleteOptions =
+      req.user.role === 'cluster_god'
+        ? undefined
+        : { current_user: req.user.id };
+
+    const deletedProject = await ClusterProject.findByIdAndDelete(
+      id,
+      deleteOptions,
+    );
 
     if (!deletedProject) {
       next(new AppError('PROJECT_NOT_FOUND', STATUSES.NOT_FOUND));
@@ -192,14 +238,28 @@ export const changeProjectStatus = async (
   next: NextFunction,
 ) => {
   try {
+    if (!req.user) {
+      next(new AppError('AUTH_ERROR_NOT_LOGGED_IN', STATUSES.UNAUTHORIZED));
+      return;
+    }
+
     const { id } = req.params;
 
     const removeUnmutableData = filterAllowedFields(req.body, 'status');
 
+    const updateOptions =
+      req.user.role === 'cluster_god'
+        ? { new: true, runValidators: true }
+        : {
+            new: true,
+            runValidators: true,
+            current_user: req.user.id,
+          };
+
     const updatedStatus = await ClusterProject.findByIdAndUpdate(
       id,
       removeUnmutableData,
-      { new: true, runValidators: true, current_user: req.body.current_user },
+      updateOptions,
     );
 
     if (!updatedStatus) {

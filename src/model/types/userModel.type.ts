@@ -7,14 +7,16 @@ export interface IUserSchema extends Document {
   role: TUserRoleType;
   cluster_projects: Array<IClusterProjectSchema>;
   password: string;
-  password_confirm: string;
-  password_changed_at: Date;
-  password_reset_token: string;
-  password_reset_expires: Date;
+  password_confirm?: string;
+  password_changed_at?: Date;
+  password_reset_token?: string | null;
+  password_reset_expires?: Date | null;
   comparePassword(
     candidatePassword: string,
     userPassword: string,
   ): Promise<boolean>;
+  changedPasswordAfter(JWTTimestamp: number): boolean;
+  createPasswordResetToken(): string;
 }
 
 export type TUserRoleType =

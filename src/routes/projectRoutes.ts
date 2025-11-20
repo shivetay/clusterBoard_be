@@ -1,5 +1,6 @@
 import type { Router } from 'express';
 import express from 'express';
+import { protect, restrictTo } from '../controllers/authController';
 import {
   changeProjectStatus,
   createProject,
@@ -16,19 +17,27 @@ const router: Router = express.Router();
 router.route('/').get(getAllProjects);
 
 // POST create project
-router.route('/create').post(createProject);
+router
+  .route('/create')
+  .post(protect, restrictTo('cluster_owner', 'cluster_god'), createProject);
 
 // GET all projects for a user (owner or investor)
-router.route('/user/:id').get(getAllUserProjects);
+router.route('/user/:id').get(protect, getAllUserProjects);
 
 // GET, PATCH, DELETE project by :id
 router
   .route('/:id')
   .get(getProjectById)
-  .patch(updateProject)
-  .delete(deleteProject);
+  .patch(protect, restrictTo('cluster_owner', 'cluster_god'), updateProject)
+  .delete(protect, restrictTo('cluster_owner', 'cluster_god'), deleteProject);
 
 // PATCH status change
-router.route('/:id/status').patch(changeProjectStatus);
+router
+  .route('/:id/status')
+  .patch(
+    protect,
+    restrictTo('cluster_owner', 'cluster_god'),
+    changeProjectStatus,
+  );
 
 export default router;
