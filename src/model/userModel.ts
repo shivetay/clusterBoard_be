@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import mongoose from 'mongoose';
 import validator from 'validator';
@@ -7,6 +8,12 @@ const MIN_USER_NAME_LENGTH = 3;
 const MAX_USER_NAME_LENGTH = 20;
 const MIN_PASSWORD_LENGTH = 8;
 const MAX_PASSWORD_LENGTH = 20;
+const PASSWORD_SALT_ROUNDS = 12;
+const PASSWORD_CHANGED_AT_OFFSET_MS = 1000;
+const MILLISECONDS_IN_SECOND = 1000;
+const SECONDS_PER_MINUTE = 60;
+const MINUTE_IN_MS = SECONDS_PER_MINUTE * MILLISECONDS_IN_SECOND;
+const PASSWORD_RESET_TOKEN_BYTES = 32;
 
 const userSchema = new mongoose.Schema<IUserSchema>(
   {
@@ -95,9 +102,15 @@ userSchema.pre('save', async function (next) {
   }
 
   try {
-    const saltRounds = 12;
-    this.password = await bcrypt.hash(this.password, saltRounds);
-    this.password_confirm = '';
+    this.password = await bcrypt.hash(this.password, PASSWORD_SALT_ROUNDS);
+    this.password_confirm = undefined;
+
+    if (!this.isNew) {
+      this.password_changed_at = new Date(
+        Date.now() - PASSWORD_CHANGED_AT_OFFSET_MS,
+      );
+    }
+
     next();
   } catch (error) {
     next(error as Error);
@@ -109,6 +122,37 @@ userSchema.methods.comparePassword = async (
   userPassword: string,
 ) => {
   return await bcrypt.compare(candidatePassword, userPassword);
+};
+
+userSchema.methods.changedPasswordAfter = function (JWTTimestamp: number) {
+  if (!this.password_changed_at) {
+    return false;
+  }
+
+  const changedTimestamp = Math.floor(
+    this.password_changed_at.getTime() / MILLISECONDS_IN_SECOND,
+  );
+  return changedTimestamp > JWTTimestamp;
+};
+
+userSchema.methods.createPasswordResetToken = function () {
+  const resetToken = crypto
+    .randomBytes(PASSWORD_RESET_TOKEN_BYTES)
+    .toString('hex');
+  const hashedToken = crypto
+    .createHash('sha256')
+    .update(resetToken)
+    .digest('hex');
+
+  this.password_reset_token = hashedToken;
+  const expiresInMinutes = Number(
+    process.env.PASSWORD_RESET_TOKEN_EXPIRES_IN_MINUTES ?? 10,
+  );
+  this.password_reset_expires = new Date(
+    Date.now() + expiresInMinutes * MINUTE_IN_MS,
+  );
+
+  return resetToken;
 };
 
 const User = mongoose.model<IUserSchema>('User', userSchema);

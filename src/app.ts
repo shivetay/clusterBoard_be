@@ -1,3 +1,4 @@
+import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import type { NextFunction, Request, Response } from 'express';
 import express from 'express';
@@ -5,7 +6,7 @@ import { xss } from 'express-xss-sanitizer';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import { errorController } from './controllers/errorController';
-import { projectRoutes, userRoutes } from './routes';
+import { authRoutes, projectRoutes, userRoutes } from './routes';
 import { STATUSES } from './utils';
 import AppError from './utils/appError';
 
@@ -24,10 +25,12 @@ if (process.env.NODE_ENV === 'development') {
 
 app.use(cors());
 app.use(xss());
+app.use(cookieParser());
 
 // Body parsing middleware
 app.use(express.json({ limit: '10kb' }));
 
+app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/projects', projectRoutes);
 

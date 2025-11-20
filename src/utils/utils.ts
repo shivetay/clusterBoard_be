@@ -1,10 +1,12 @@
-export const filterAllowedFields = (
-  obj: Record<string, any>,
+export const filterAllowedFields = <T extends Record<string, unknown>>(
+  obj: T,
   ...allowedFields: string[]
 ) => {
-  const newObj: Record<string, any> = {};
-  Object.keys(obj).forEach((el) => {
-    if (allowedFields.includes(el)) newObj[el] = obj[el];
+  const newObj: Partial<T> = {};
+  Object.keys(obj).forEach((key) => {
+    if (allowedFields.includes(key)) {
+      newObj[key as keyof T] = obj[key as keyof T];
+    }
   });
   return newObj;
 };
