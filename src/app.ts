@@ -1,6 +1,8 @@
+import { clerkMiddleware } from '@clerk/express';
 import cors from 'cors';
 import type { NextFunction, Request, Response } from 'express';
 import express from 'express';
+import mongoSanitize from 'express-mongo-sanitize';
 import { xss } from 'express-xss-sanitizer';
 import helmet from 'helmet';
 import morgan from 'morgan';
@@ -22,11 +24,12 @@ if (process.env.NODE_ENV === 'development') {
   app.use(morgan('tiny'));
 }
 
-app.use(cors());
-app.use(xss());
-
+app.use(clerkMiddleware());
 // Body parsing middleware
 app.use(express.json({ limit: '10kb' }));
+app.use(mongoSanitize());
+app.use(cors());
+app.use(xss());
 
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/projects', projectRoutes);

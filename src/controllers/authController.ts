@@ -10,7 +10,7 @@ export const createUser = async (
   next: NextFunction,
 ) => {
   try {
-    const { user_name, email, password, role } = req.body;
+    const { user_name, email, role } = req.body;
 
     const newUser = await User.create({
       user_name,
