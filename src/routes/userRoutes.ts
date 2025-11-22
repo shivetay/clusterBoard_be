@@ -1,17 +1,15 @@
 import type { Router } from 'express';
 import express from 'express';
-import { createUser } from '../controllers/authController';
 import { getAllUsers, getUserById } from '../controllers/userController';
+import { requireAuth } from '../middleware/clerk-auth';
+import { requireClusterGod } from '../middleware/role-check';
 
 const router: Router = express.Router();
 
 // GET all users
-router.route('/').get(getAllUsers);
-
-// POST dummy create user
-router.route('/create').post(createUser);
+router.route('/').get(requireAuth, requireClusterGod, getAllUsers);
 
 // GET user by :id
-router.route('/:id').get(getUserById);
+router.route('/:id').get(requireAuth, getUserById);
 
 export default router;

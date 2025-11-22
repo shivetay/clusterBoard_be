@@ -23,13 +23,13 @@ const clusterProjectSchema = new mongoose.Schema(
       maxlength: [MAX_PROJECT_NAME_LENGTH, LOCALES.PROJECT_NAME_MAX_LENGTH],
     },
     owner: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       ref: 'User',
       required: true,
     },
     investors: [
       {
-        type: mongoose.Schema.Types.ObjectId,
+        type: String,
         ref: 'User',
       },
     ],

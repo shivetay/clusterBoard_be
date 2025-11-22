@@ -61,8 +61,7 @@ export const getAllUserProjects = async (
 ) => {
   try {
     const { id } = req.params;
-
-    const user = await User.findById(id);
+    const user = await User.findOne({ clerk_id: id });
 
     if (!user) {
       next(new AppError('USER_NOT_FOUND', STATUSES.NOT_FOUND));
@@ -94,7 +93,7 @@ export const createProject = async (
   try {
     const { project_name, owner, investors } = req.body;
 
-    const checkUserId = await User.findById(owner);
+    const checkUserId = await User.findOne({ clerk_id: owner });
 
     if (!checkUserId) {
       next(new AppError('AUTH_ERROR_USER_NOT_FOUND', STATUSES.NOT_FOUND));

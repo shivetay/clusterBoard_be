@@ -3,9 +3,6 @@ import type { IUserSchema } from './types';
 
 const userSchema = new mongoose.Schema<IUserSchema>(
   {
-    user_name: {
-      type: String,
-    },
     role: {
       type: String,
       enum: ['investor', 'cluster_owner', 'cluster_god', 'team_member'],

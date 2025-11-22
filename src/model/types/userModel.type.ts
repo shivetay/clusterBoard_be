@@ -2,7 +2,6 @@ import type { Document } from 'mongoose';
 import type { IClusterProjectSchema } from './projectModel.type';
 
 export interface IUserSchema extends Document {
-  user_name: string;
   role: TUserRoleType;
   cluster_projects: Array<IClusterProjectSchema>;
   clerk_id: string;
