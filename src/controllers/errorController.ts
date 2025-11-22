@@ -49,6 +49,11 @@ export const errorController = (
   res: Response,
   _next: NextFunction,
 ) => {
+  // Check if response has already been sent
+  if (res.headersSent) {
+    return;
+  }
+
   res.setHeader('Content-Type', 'application/json');
 
   err.statusCode = err.statusCode || 500;
