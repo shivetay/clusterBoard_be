@@ -61,8 +61,7 @@ export const getAllUserProjects = async (
 ) => {
   try {
     const { id } = req.params;
-
-    const user = await User.findById(id);
+    const user = await User.findOne({ clerk_id: id });
 
     if (!user) {
       next(new AppError('USER_NOT_FOUND', STATUSES.NOT_FOUND));
@@ -94,7 +93,7 @@ export const createProject = async (
   try {
     const { project_name, owner, investors } = req.body;
 
-    const checkUserId = await User.findById(owner);
+    const checkUserId = await User.findOne({ clerk_id: owner });
 
     if (!checkUserId) {
       next(new AppError('AUTH_ERROR_USER_NOT_FOUND', STATUSES.NOT_FOUND));
@@ -127,6 +126,27 @@ export const updateProject = async (
   try {
     const { id } = req.params;
 
+    // Ensure user is authenticated (should be set by requireAuth middleware)
+    if (!req.user || !req.clerkUserId) {
+      next(new AppError('AUTH_ERROR_USER_NOT_FOUND', STATUSES.UNAUTHORIZED));
+      return;
+    }
+
+    // Find the project first to verify ownership
+    const project = await ClusterProject.findById(id);
+
+    if (!project) {
+      next(new AppError('PROJECT_NOT_FOUND', STATUSES.NOT_FOUND));
+      return;
+    }
+
+    try {
+      project.verifyOwner(req.clerkUserId, req.user.role);
+    } catch (ownershipError) {
+      next(ownershipError);
+      return;
+    }
+
     const removeUnmutableData = filterAllowedFields(
       req.body,
       'project_name',
@@ -136,7 +156,7 @@ export const updateProject = async (
     const updatedProject = await ClusterProject.findByIdAndUpdate(
       id,
       removeUnmutableData,
-      { new: true, runValidators: true, current_user: req.body.current_user },
+      { new: true, runValidators: true },
     );
 
     if (!updatedProject) {
@@ -166,9 +186,27 @@ export const deleteProject = async (
   try {
     const { id } = req.params;
 
-    const deletedProject = await ClusterProject.findByIdAndDelete(id, {
-      current_user: req.body.current_user,
-    });
+    // Ensure user is authenticated (should be set by requireAuth middleware)
+    if (!req.user || !req.clerkUserId) {
+      next(new AppError('AUTH_ERROR_USER_NOT_FOUND', STATUSES.UNAUTHORIZED));
+      return;
+    }
+
+    const project = await ClusterProject.findById(id);
+
+    if (!project) {
+      next(new AppError('PROJECT_NOT_FOUND', STATUSES.NOT_FOUND));
+      return;
+    }
+
+    try {
+      project.verifyOwner(req.clerkUserId, req.user.role);
+    } catch (ownershipError) {
+      next(ownershipError);
+      return;
+    }
+
+    const deletedProject = await ClusterProject.findByIdAndDelete(id);
 
     if (!deletedProject) {
       next(new AppError('PROJECT_NOT_FOUND', STATUSES.NOT_FOUND));
@@ -194,12 +232,33 @@ export const changeProjectStatus = async (
   try {
     const { id } = req.params;
 
+    // Ensure user is authenticated (should be set by requireAuth middleware)
+    if (!req.user || !req.clerkUserId) {
+      next(new AppError('AUTH_ERROR_USER_NOT_FOUND', STATUSES.UNAUTHORIZED));
+      return;
+    }
+
+    // Find the project first to verify ownership
+    const project = await ClusterProject.findById(id);
+
+    if (!project) {
+      next(new AppError('PROJECT_NOT_FOUND', STATUSES.NOT_FOUND));
+      return;
+    }
+
+    try {
+      project.verifyOwner(req.clerkUserId, req.user.role);
+    } catch (ownershipError) {
+      next(ownershipError);
+      return;
+    }
+
     const removeUnmutableData = filterAllowedFields(req.body, 'status');
 
     const updatedStatus = await ClusterProject.findByIdAndUpdate(
       id,
       removeUnmutableData,
-      { new: true, runValidators: true, current_user: req.body.current_user },
+      { new: true, runValidators: true },
     );
 
     if (!updatedStatus) {

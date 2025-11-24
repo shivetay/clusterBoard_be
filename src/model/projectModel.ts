@@ -1,6 +1,8 @@
 import mongoose from 'mongoose';
 import { LOCALES } from '../locales';
-import type { IClusterProjectSchema } from './types';
+import { STATUSES } from '../utils';
+import AppError from '../utils/appError';
+import type { IClusterProjectSchema, TUserRoleType } from './types';
 
 const PROJECT_STATUS_VALUES = [
   'planning',
@@ -23,13 +25,13 @@ const clusterProjectSchema = new mongoose.Schema(
       maxlength: [MAX_PROJECT_NAME_LENGTH, LOCALES.PROJECT_NAME_MAX_LENGTH],
     },
     owner: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       ref: 'User',
       required: true,
     },
     investors: [
       {
-        type: mongoose.Schema.Types.ObjectId,
+        type: String,
         ref: 'User',
       },
     ],
@@ -46,33 +48,18 @@ const clusterProjectSchema = new mongoose.Schema(
   },
 );
 
-clusterProjectSchema.pre('findOneAndUpdate', function (next) {
-  const options = this.getOptions();
-  const currentUser = options?.current_user;
-  if (!currentUser) {
-    return next();
+clusterProjectSchema.methods.verifyOwner = function (
+  currentUserId: string,
+  clusterRole: TUserRoleType,
+): void {
+  if (clusterRole === 'cluster_god') {
+    return;
   }
-
-  // filter so only owner can update
-  const filterData = this.getFilter();
-  this.setQuery({ ...filterData, owner: currentUser });
-
-  next();
-});
-
-clusterProjectSchema.pre('findOneAndDelete', function (next) {
-  const options = this.getOptions();
-  const currentUser = options?.current_user;
-  if (!currentUser) {
-    return next();
+  // Verify the current user is the project owner
+  if (this.owner !== currentUserId) {
+    throw new AppError('FORBIDDEN_NOT_PROJECT_OWNER', STATUSES.FORBIDDEN);
   }
-
-  // filter so only owner can delete
-  const filterData = this.getFilter();
-  this.setQuery({ ...filterData, owner: currentUser });
-
-  next();
-});
+};
 
 const ClusterProject = mongoose.model<IClusterProjectSchema>(
   'ClusterProject',
