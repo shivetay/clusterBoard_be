@@ -1,10 +1,6 @@
-import { clerkMiddleware, getAuth } from '@clerk/express';
-import type { NextFunction, Request, RequestHandler, Response } from 'express';
+import { getAuth } from '@clerk/express';
+import type { NextFunction, Request, Response } from 'express';
 import User from '../model/userModel';
-
-// Apply Clerk middleware globally in your app
-// This will be added to app.ts
-export const applyClerkMiddleware: RequestHandler = clerkMiddleware();
 
 // Custom middleware to require authentication
 export const requireAuth = async (

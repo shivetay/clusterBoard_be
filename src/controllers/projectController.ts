@@ -126,6 +126,12 @@ export const updateProject = async (
   try {
     const { id } = req.params;
 
+    // Ensure user is authenticated (should be set by requireAuth middleware)
+    if (!req.user || !req.clerkUserId) {
+      next(new AppError('AUTH_ERROR_USER_NOT_FOUND', STATUSES.UNAUTHORIZED));
+      return;
+    }
+
     // Find the project first to verify ownership
     const project = await ClusterProject.findById(id);
 
@@ -135,7 +141,7 @@ export const updateProject = async (
     }
 
     try {
-      project.verifyOwner(req.body.current_user, req.body.current_user_role);
+      project.verifyOwner(req.clerkUserId, req.user.role);
     } catch (ownershipError) {
       next(ownershipError);
       return;
@@ -180,6 +186,12 @@ export const deleteProject = async (
   try {
     const { id } = req.params;
 
+    // Ensure user is authenticated (should be set by requireAuth middleware)
+    if (!req.user || !req.clerkUserId) {
+      next(new AppError('AUTH_ERROR_USER_NOT_FOUND', STATUSES.UNAUTHORIZED));
+      return;
+    }
+
     const project = await ClusterProject.findById(id);
 
     if (!project) {
@@ -188,15 +200,13 @@ export const deleteProject = async (
     }
 
     try {
-      project.verifyOwner(req.body.current_user, req.body.current_user_role);
+      project.verifyOwner(req.clerkUserId, req.user.role);
     } catch (ownershipError) {
       next(ownershipError);
       return;
     }
 
-    const deletedProject = await ClusterProject.findByIdAndDelete(id, {
-      current_user: req.body.current_user,
-    });
+    const deletedProject = await ClusterProject.findByIdAndDelete(id);
 
     if (!deletedProject) {
       next(new AppError('PROJECT_NOT_FOUND', STATUSES.NOT_FOUND));
@@ -222,11 +232,22 @@ export const changeProjectStatus = async (
   try {
     const { id } = req.params;
 
+    // Ensure user is authenticated (should be set by requireAuth middleware)
+    if (!req.user || !req.clerkUserId) {
+      next(new AppError('AUTH_ERROR_USER_NOT_FOUND', STATUSES.UNAUTHORIZED));
+      return;
+    }
+
+    // Find the project first to verify ownership
+    const project = await ClusterProject.findById(id);
+
+    if (!project) {
+      next(new AppError('PROJECT_NOT_FOUND', STATUSES.NOT_FOUND));
+      return;
+    }
+
     try {
-      await ClusterProject.prototype.verifyOwner(
-        req.body.current_user,
-        req.body.current_user_role,
-      );
+      project.verifyOwner(req.clerkUserId, req.user.role);
     } catch (ownershipError) {
       next(ownershipError);
       return;
