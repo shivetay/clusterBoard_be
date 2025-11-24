@@ -55,12 +55,7 @@ app.use(
       // Allow requests with no origin (like mobile apps or curl requests)
       if (!origin) return callback(null, true);
 
-      // Allow localhost origins for local development (when accessing production backend from localhost)
-      const isLocalhost =
-        origin.startsWith('http://localhost:') ||
-        origin.startsWith('http://127.0.0.1:');
-
-      if (allowedOrigins.includes(origin) || isLocalhost) {
+      if (allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
         callback(new Error('Not allowed by CORS'));
