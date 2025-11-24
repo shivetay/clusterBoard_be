@@ -46,7 +46,8 @@ app.use(
 
 // CORS configuration
 const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [
-  'http://localhost:3823',
+  'http://localhost:3121',
+  'https://cluster-board-dev-c9162d0e21f7.herokuapp.com/api/v1',
 ];
 
 app.use(
