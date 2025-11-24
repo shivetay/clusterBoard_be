@@ -54,10 +54,18 @@ router.post(
       const eventType = evt.type;
       switch (eventType) {
         case 'user.created': {
-          // Create user in MongoDB
-          const newUser = await User.create({
-            clerk_id: id,
-          });
+          // Create user in MongoDB (use upsert to handle race conditions)
+          const newUser = await User.findOneAndUpdate(
+            { clerk_id: id },
+            {
+              clerk_id: id,
+              role:
+                public_metadata?.role ||
+                unsafe_metadata?.role ||
+                'cluster_owner',
+            },
+            { upsert: true, new: true, setDefaultsOnInsert: true },
+          );
           return res.status(200).json({
             message: 'User created in MongoDB',
             status: 'success',
@@ -66,14 +74,23 @@ router.post(
         }
 
         case 'user.updated': {
-          // Update user in MongoDB
+          // Update user in MongoDB (use upsert to create if doesn't exist)
+          // This handles cases where user.updated arrives before user.created
           const updatedUser = await User.findOneAndUpdate(
             { clerk_id: id },
             {
               role: public_metadata?.role || unsafe_metadata?.role,
             },
-            { new: true },
+            { upsert: true, new: true, setDefaultsOnInsert: true },
           );
+
+          if (!updatedUser) {
+            return res.status(404).json({
+              error: 'User not found and could not be created',
+              status: 'error',
+            });
+          }
+
           return res.status(200).json({
             message: 'User updated in MongoDB',
             status: 'success',
