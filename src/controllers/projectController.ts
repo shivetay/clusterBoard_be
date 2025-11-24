@@ -126,6 +126,21 @@ export const updateProject = async (
   try {
     const { id } = req.params;
 
+    // Find the project first to verify ownership
+    const project = await ClusterProject.findById(id);
+
+    if (!project) {
+      next(new AppError('PROJECT_NOT_FOUND', STATUSES.NOT_FOUND));
+      return;
+    }
+
+    try {
+      project.verifyOwner(req.body.current_user, req.body.current_user_role);
+    } catch (ownershipError) {
+      next(ownershipError);
+      return;
+    }
+
     const removeUnmutableData = filterAllowedFields(
       req.body,
       'project_name',
@@ -165,6 +180,20 @@ export const deleteProject = async (
   try {
     const { id } = req.params;
 
+    const project = await ClusterProject.findById(id);
+
+    if (!project) {
+      next(new AppError('PROJECT_NOT_FOUND', STATUSES.NOT_FOUND));
+      return;
+    }
+
+    try {
+      project.verifyOwner(req.body.current_user, req.body.current_user_role);
+    } catch (ownershipError) {
+      next(ownershipError);
+      return;
+    }
+
     const deletedProject = await ClusterProject.findByIdAndDelete(id, {
       current_user: req.body.current_user,
     });
@@ -192,6 +221,16 @@ export const changeProjectStatus = async (
 ) => {
   try {
     const { id } = req.params;
+
+    try {
+      await ClusterProject.prototype.verifyOwner(
+        req.body.current_user,
+        req.body.current_user_role,
+      );
+    } catch (ownershipError) {
+      next(ownershipError);
+      return;
+    }
 
     const removeUnmutableData = filterAllowedFields(req.body, 'status');
 

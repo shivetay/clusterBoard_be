@@ -51,14 +51,17 @@ if (process.env.NODE_ENV === 'development') {
   app.use(morgan('tiny'));
 }
 
-app.use(clerkMiddleware());
-
-// Webhook routes MUST be before express.json() to get raw body for signature verification
+// Webhook routes MUST be before clerkMiddleware() and express.json() to:
+// 1. Bypass Clerk authentication middleware (webhooks use signature verification)
+// 2. Get raw body for signature verification
 app.use(
   '/api/v1/webhooks',
   express.raw({ type: 'application/json' }),
   clerkWebhookRouter,
 );
+
+// Apply Clerk middleware globally for all other routes
+app.use(clerkMiddleware());
 
 // Body parsing middleware for all other routes
 app.use(express.json({ limit: '10kb' }));

@@ -1,6 +1,8 @@
 import mongoose from 'mongoose';
 import { LOCALES } from '../locales';
-import type { IClusterProjectSchema } from './types';
+import { STATUSES } from '../utils';
+import AppError from '../utils/appError';
+import type { IClusterProjectSchema, TUserRoleType } from './types';
 
 const PROJECT_STATUS_VALUES = [
   'planning',
@@ -45,6 +47,19 @@ const clusterProjectSchema = new mongoose.Schema(
     toObject: { virtuals: true },
   },
 );
+
+clusterProjectSchema.methods.verifyOwner = function (
+  currentUserId: string,
+  clusterRole: TUserRoleType,
+): void {
+  if (clusterRole === 'cluster_god') {
+    return;
+  }
+  // Verify the current user is the project owner
+  if (this.owner !== currentUserId) {
+    throw new AppError('FORBIDDEN_NOT_PROJECT_OWNER', STATUSES.FORBIDDEN);
+  }
+};
 
 const ClusterProject = mongoose.model<IClusterProjectSchema>(
   'ClusterProject',

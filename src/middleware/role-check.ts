@@ -15,7 +15,6 @@ export const checkRole = (...allowedRoles: TUserRoleType[]) => {
       return res.status(STATUSES.FORBIDDEN).json({
         error: 'Access denied. Insufficient permissions.',
         required: allowedRoles,
-        current: req.user.role,
       });
     }
 
