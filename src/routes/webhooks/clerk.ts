@@ -117,14 +117,26 @@ router.post(
             return;
           }
 
+          const providedRole =
+            public_metadata?.role || unsafe_metadata?.role || 'cluster_owner';
+          const role = validRoles.includes(
+            providedRole as (typeof validRoles)[number],
+          )
+            ? (providedRole as (typeof validRoles)[number])
+            : 'cluster_owner';
+
           // Update user in MongoDB (use upsert to create if doesn't exist)
           // This handles cases where user.updated arrives before user.created
           const updatedUser = await User.findOneAndUpdate(
             { clerk_id: id },
             {
-              role: (public_metadata?.role || unsafe_metadata?.role) as
-                | (typeof validRoles)[number]
-                | undefined,
+              role: validRoles.includes(
+                (public_metadata?.role ||
+                  unsafe_metadata?.role) as (typeof validRoles)[number],
+              )
+                ? ((public_metadata?.role ||
+                    unsafe_metadata?.role) as (typeof validRoles)[number])
+                : role,
             },
             { upsert: true, new: true, setDefaultsOnInsert: true },
           );
