@@ -1,8 +1,5 @@
 name: Deploy to dev
 on:
-  push:
-    branches:
-      - "**" # Triggers on push to any branch
   workflow_dispatch: # Allows manual trigger from GitHub UI
     inputs:
       branch:
