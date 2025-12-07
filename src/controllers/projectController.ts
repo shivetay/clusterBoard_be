@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
 import ClusterProject from '../model/projectModel';
+import ProjectStages from '../model/stageModel';
 import User from '../model/userModel';
 import { filterAllowedFields, STATUSES } from '../utils';
 import AppError from '../utils/appError';
@@ -35,7 +36,9 @@ export const getProjectById = async (
 ) => {
   try {
     const { id } = req.params;
-    const project = await ClusterProject.findById(id);
+    const project = await ClusterProject.findById(id).populate({
+      path: 'project_stages',
+    });
 
     if (!project) {
       next(new AppError('PROJECT_NOT_FOUND', STATUSES.NOT_FOUND));
@@ -277,3 +280,67 @@ export const changeProjectStatus = async (
     next(error);
   }
 };
+
+// PATCH add project stage
+
+export const addProjectStage = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { id } = req.params;
+
+    // Ensure user is authenticated (should be set by requireAuth middleware)
+    if (!req.user || !req.clerkUserId) {
+      next(new AppError('AUTH_ERROR_USER_NOT_FOUND', STATUSES.UNAUTHORIZED));
+      return;
+    }
+
+    // Find the project first to verify ownership
+    const project = await ClusterProject.findById(id);
+
+    if (!project) {
+      next(new AppError('PROJECT_NOT_FOUND', STATUSES.NOT_FOUND));
+      return;
+    }
+
+    try {
+      project.verifyOwner(req.clerkUserId, req.user.role);
+    } catch (ownershipError) {
+      next(ownershipError);
+      return;
+    }
+
+    const removeUnmutableData = filterAllowedFields(
+      req.body,
+      'project_name',
+      'project_description',
+      'investors',
+    );
+
+    const createdStage = await ProjectStages.create({
+      cluster_project_id: id,
+      stage_name: req.body.stage_name,
+      stage_description: req.body.stage_description,
+      removeUnmutableData,
+    });
+
+    if (!createdStage) {
+      next(new AppError('PROJECT_NOT_FOUND', STATUSES.NOT_FOUND));
+      return;
+    }
+
+    res.status(STATUSES.SUCCESS).json({
+      status: 'success',
+      data: {
+        stage: createdStage,
+      },
+      message: 'STAGE_ADDED_TO_PROJECT',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// TODO end project

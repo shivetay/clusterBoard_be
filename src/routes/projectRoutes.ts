@@ -1,6 +1,7 @@
 import type { Router } from 'express';
 import express from 'express';
 import {
+  addProjectStage,
   changeProjectStatus,
   createProject,
   deleteProject,
@@ -40,4 +41,10 @@ router
 router
   .route('/:id/status')
   .patch(requireAuth, requireOwnerOrGod, changeProjectStatus);
+
+// PATCH add project stage
+router
+  .route('/:id/add-stage')
+  .patch(requireAuth, requireOwnerOrGod, addProjectStage);
+
 export default router;
