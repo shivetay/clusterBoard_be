@@ -166,7 +166,14 @@ router.post(
           }
 
           // Delete user from MongoDB
-          await User.findOneAndDelete({ clerk_id: id });
+          const mongoDBUserId = await User.findOne({ clerk_id: id });
+
+          if (!mongoDBUserId) {
+            next(new AppError('INVALID_USER_ID', STATUSES.BAD_REQUEST));
+            return;
+          }
+
+          await User.findByIdAndDelete(mongoDBUserId?._id);
           await ClusterProject.deleteMany({ owner: id });
 
           return res.status(200).json({ message: 'User deleted from MongoDB' });

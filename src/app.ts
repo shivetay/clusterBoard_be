@@ -9,7 +9,12 @@ import { xss } from 'express-xss-sanitizer';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import { errorController } from './controllers/errorController';
-import { clerkWebhookRouter, projectRoutes, userRoutes } from './routes';
+import {
+  clerkWebhookRouter,
+  projectRoutes,
+  tasksRoutes,
+  userRoutes,
+} from './routes';
 import { STATUSES } from './utils';
 import AppError from './utils/appError';
 
@@ -77,6 +82,7 @@ app.use(xss());
 // Routes
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/projects', projectRoutes);
+app.use('/api/v1/tasks', tasksRoutes);
 
 app.use((req: Request, _res: Response, next: NextFunction) => {
   next(

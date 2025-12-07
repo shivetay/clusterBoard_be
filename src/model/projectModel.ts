@@ -14,6 +14,8 @@ const PROJECT_STATUS_VALUES = [
 
 const MIN_PROJECT_NAME_LENGTH = 3;
 const MAX_PROJECT_NAME_LENGTH = 25;
+const MIN_PROJECT_DESCRIPTION_LENGTH = 25;
+const MAX_PROJECT_DESCRIPTION_LENGTH = 250;
 
 const clusterProjectSchema = new mongoose.Schema(
   {
@@ -23,6 +25,18 @@ const clusterProjectSchema = new mongoose.Schema(
       trim: true,
       minlength: [MIN_PROJECT_NAME_LENGTH, LOCALES.PROJECT_NAME_MIN_LENGTH],
       maxlength: [MAX_PROJECT_NAME_LENGTH, LOCALES.PROJECT_NAME_MAX_LENGTH],
+    },
+    project_description: {
+      type: String,
+      trim: true,
+      minlength: [
+        MIN_PROJECT_DESCRIPTION_LENGTH,
+        LOCALES.PROJECT_DESCRIPTION_MIN_LENGTH,
+      ],
+      maxlength: [
+        MAX_PROJECT_DESCRIPTION_LENGTH,
+        LOCALES.PROJECT_DESCRIPTION_MAX_LENGTH,
+      ],
     },
     owner: {
       type: String,
@@ -35,7 +49,7 @@ const clusterProjectSchema = new mongoose.Schema(
         ref: 'User',
       },
     ],
-    status: {
+    project_status: {
       type: String,
       default: PROJECT_STATUS_VALUES[0],
       enum: PROJECT_STATUS_VALUES,
@@ -47,6 +61,13 @@ const clusterProjectSchema = new mongoose.Schema(
     toObject: { virtuals: true },
   },
 );
+
+clusterProjectSchema.virtual('project_stages', {
+  ref: 'ProjectStages',
+  foreignField: 'cluster_project_id',
+  localField: '_id',
+  justOne: false,
+});
 
 clusterProjectSchema.methods.verifyOwner = function (
   currentUserId: string,
