@@ -12,6 +12,7 @@ import { errorController } from './controllers/errorController';
 import {
   clerkWebhookRouter,
   projectRoutes,
+  stageRoutes,
   tasksRoutes,
   userRoutes,
 } from './routes';
@@ -83,6 +84,7 @@ app.use(xss());
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/projects', projectRoutes);
 app.use('/api/v1/tasks', tasksRoutes);
+app.use('/api/v1/stages', stageRoutes);
 
 app.use((req: Request, _res: Response, next: NextFunction) => {
   next(

@@ -20,4 +20,8 @@ export const LOCALES = {
   TASK_NAME: 'Please provide a task name',
   TASK_NAME_MIN_LENGTH: 'Task name must be at least 3 characters long',
   TASK_NAME_MAX_LENGTH: 'Task name must be less than 100 characters long',
+  STAGE_NOT_FOUND: 'Stage not found',
+  TASKS_ADDED_TO_STAGE: 'Tasks added to stage successfully',
+  AT_LEAST_ONE_TASK_REQUIRED: 'At least one task is required',
+  INVALID_TASKS_FORMAT: 'Invalid tasks format',
 };
