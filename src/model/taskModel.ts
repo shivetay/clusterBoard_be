@@ -16,7 +16,7 @@ const taskSchema = new mongoose.Schema(
       required: [true, LOCALES.TASK_NAME],
       trim: true,
       minlength: [MIN_TASK_NAME_LENGTH, LOCALES.TASK_NAME_MIN_LENGTH],
-      maxlength: [MAX_TASK_NAME_LENGTH, LOCALES.TASK_NAME_MAX_LENGTH],
+      // maxlength: [MAX_TASK_NAME_LENGTH, LOCALES.TASK_NAME_MAX_LENGTH],
     },
     is_done: {
       type: Boolean,

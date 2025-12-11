@@ -28,6 +28,10 @@ const projectStages = new mongoose.Schema(
         LOCALES.PROJECT_DESCRIPTION_STAGE_NAME_MAX_LENGTH,
       ],
     },
+    is_done: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,
@@ -35,6 +39,13 @@ const projectStages = new mongoose.Schema(
     toObject: { virtuals: true },
   },
 );
+
+projectStages.virtual('stage_tasks', {
+  ref: 'Task',
+  localField: '_id',
+  foreignField: 'stage_id',
+  justOne: false,
+});
 
 const ProjectStages = mongoose.model('ProjectStages', projectStages);
 

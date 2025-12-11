@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
 import ClusterProject from '../model/projectModel';
 import ProjectStages from '../model/stageModel';
+import Task from '../model/taskModel';
 import User from '../model/userModel';
 import { filterAllowedFields, STATUSES } from '../utils';
 import AppError from '../utils/appError';
@@ -38,6 +39,9 @@ export const getProjectById = async (
     const { id } = req.params;
     const project = await ClusterProject.findById(id).populate({
       path: 'project_stages',
+      populate: {
+        path: 'stage_tasks',
+      },
     });
 
     if (!project) {
@@ -207,6 +211,21 @@ export const deleteProject = async (
     } catch (ownershipError) {
       next(ownershipError);
       return;
+    }
+
+    //remove stages and tasks associated with the project
+    try {
+      await Task.deleteMany({ stage_id: id });
+      await ProjectStages.deleteMany({
+        cluster_project_id: id,
+      });
+    } catch (_error) {
+      next(
+        new AppError(
+          'ERROR_DELETING_ASSOCIATED_STAGES_TASKS',
+          STATUSES.SERVER_ERROR,
+        ),
+      );
     }
 
     const deletedProject = await ClusterProject.findByIdAndDelete(id);
