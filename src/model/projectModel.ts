@@ -54,6 +54,12 @@ const clusterProjectSchema = new mongoose.Schema(
       default: PROJECT_STATUS_VALUES[0],
       enum: PROJECT_STATUS_VALUES,
     },
+    start_date: {
+      type: Date,
+    },
+    end_date: {
+      type: Date,
+    },
   },
   {
     timestamps: true,
@@ -67,6 +73,24 @@ clusterProjectSchema.virtual('project_stages', {
   foreignField: 'cluster_project_id',
   localField: '_id',
   justOne: false,
+});
+
+clusterProjectSchema.virtual('formatted_start_date').get(function () {
+  if (!this.start_date) return null;
+  const date = new Date(this.start_date);
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+});
+
+clusterProjectSchema.virtual('formatted_end_date').get(function () {
+  if (!this.end_date) return null;
+  const date = new Date(this.end_date);
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
 });
 
 clusterProjectSchema.methods.verifyOwner = function (

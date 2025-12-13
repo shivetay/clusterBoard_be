@@ -5,6 +5,7 @@ import Task from '../model/taskModel';
 import User from '../model/userModel';
 import { filterAllowedFields, STATUSES } from '../utils';
 import AppError from '../utils/appError';
+import { parseTaskNames } from '../utils/taskHelpers';
 
 // GET all projects
 
@@ -98,7 +99,14 @@ export const createProject = async (
   next: NextFunction,
 ) => {
   try {
-    const { project_name, owner, investors } = req.body;
+    const {
+      project_name,
+      owner,
+      investors,
+      start_date,
+      end_date,
+      project_description,
+    } = req.body;
 
     const checkUserId = await User.findOne({ clerk_id: owner });
 
@@ -111,6 +119,9 @@ export const createProject = async (
       project_name,
       owner,
       investors,
+      start_date,
+      end_date,
+      project_description,
     });
 
     res.status(STATUSES.CREATED).json({
@@ -157,7 +168,9 @@ export const updateProject = async (
     const removeUnmutableData = filterAllowedFields(
       req.body,
       'project_name',
-      'investors',
+      'project_description',
+      'start_date',
+      'end_date',
     );
 
     const updatedProject = await ClusterProject.findByIdAndUpdate(
@@ -342,8 +355,20 @@ export const addProjectStage = async (
       cluster_project_id: id,
       stage_name: req.body.stage_name,
       stage_description: req.body.stage_description,
+      stage_tasks: req.body.stage_tasks,
       removeUnmutableData,
     });
+
+    const taskNames = parseTaskNames(req.body.stage_tasks, next);
+
+    const mappedTasks =
+      taskNames?.map((name) => ({
+        stage_id: createdStage._id,
+        task_name: name,
+        is_done: false,
+      })) || [];
+
+    await Task.insertMany(mappedTasks);
 
     if (!createdStage) {
       next(new AppError('PROJECT_NOT_FOUND', STATUSES.NOT_FOUND));

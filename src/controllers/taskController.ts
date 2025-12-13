@@ -4,6 +4,7 @@ import ProjectStages from '../model/stageModel';
 import Task from '../model/taskModel';
 import { filterAllowedFields, STATUSES } from '../utils';
 import AppError from '../utils/appError';
+import { parseTaskNames } from '../utils/taskHelpers';
 
 export const addTasksToStage = async (
   req: Request,
@@ -31,19 +32,9 @@ export const addTasksToStage = async (
     }
 
     // Handle both array and comma-separated string (flexible approach)
-    let taskNames: string[];
+    const taskNames = parseTaskNames(stage_task, next);
 
-    if (Array.isArray(stage_task)) {
-      taskNames = stage_task
-        .map((t) => String(t).trim())
-        .filter((t) => t.length > 0);
-    } else if (typeof stage_task === 'string') {
-      taskNames = stage_task
-        .split(',')
-        .map((t) => t.trim())
-        .filter((t) => t.length > 0);
-    } else {
-      next(new AppError('INVALID_TASKS_FORMAT', STATUSES.BAD_REQUEST));
+    if (!taskNames) {
       return;
     }
 

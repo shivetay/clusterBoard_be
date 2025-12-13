@@ -13,7 +13,7 @@ const router: Router = express.Router();
 // POST add task to stage
 
 router
-  .route('/:stageId/add')
+  .route('/:stageId/add-tasks')
   .post(requireAuth, requireOwnerOrGod, addTasksToStage);
 
 // GET all tasks
