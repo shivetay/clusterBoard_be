@@ -2,7 +2,6 @@ import mongoose from 'mongoose';
 import { LOCALES } from '../locales';
 
 const MIN_TASK_NAME_LENGTH = 3;
-const MAX_TASK_NAME_LENGTH = 15;
 
 const taskSchema = new mongoose.Schema(
   {
@@ -16,7 +15,6 @@ const taskSchema = new mongoose.Schema(
       required: [true, LOCALES.TASK_NAME],
       trim: true,
       minlength: [MIN_TASK_NAME_LENGTH, LOCALES.TASK_NAME_MIN_LENGTH],
-      // maxlength: [MAX_TASK_NAME_LENGTH, LOCALES.TASK_NAME_MAX_LENGTH],
     },
     is_done: {
       type: Boolean,
