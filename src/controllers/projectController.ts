@@ -288,7 +288,7 @@ export const changeProjectStatus = async (
       return;
     }
 
-    const removeUnmutableData = filterAllowedFields(req.body, 'status');
+    const removeUnmutableData = filterAllowedFields(req.body, 'project_status');
 
     const updatedStatus = await ClusterProject.findByIdAndUpdate(
       id,
