@@ -5,11 +5,10 @@ import AppError from '../utils/appError';
 import type { IClusterProjectSchema, TUserRoleType } from './types';
 
 const PROJECT_STATUS_VALUES = [
-  'planning',
-  'active',
-  'completed',
-  'cancelled',
-  'on_hold',
+  'w toku',
+  'zakończony',
+  'wstrzymany',
+  'w przygotowaniu',
 ] as const;
 
 const MIN_PROJECT_NAME_LENGTH = 3;
@@ -51,7 +50,7 @@ const clusterProjectSchema = new mongoose.Schema(
     ],
     project_status: {
       type: String,
-      default: PROJECT_STATUS_VALUES[0],
+      default: PROJECT_STATUS_VALUES[3],
       enum: PROJECT_STATUS_VALUES,
     },
     start_date: {
