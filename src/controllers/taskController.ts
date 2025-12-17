@@ -134,6 +134,7 @@ export const updateTask = async (
 };
 
 // DELETE task
+// TODO dodanie usuniecia komentarzy oraz taskow od usera
 export const deleteTask = async (
   req: Request,
   res: Response,
