@@ -12,7 +12,7 @@ export const LOCALES = {
     'Stage name must be at least 3 characters long',
   PROJECT_STAGE_NAME_MAX_LENGTH:
     'Stage name must be less than 10 characters long',
-  PROJECT__DESCRIPTION_STAGE_NAME_MIN_LENGTH:
+  PROJECT_DESCRIPTION_STAGE_NAME_MIN_LENGTH:
     'Stage description must be at least 25 characters long',
   PROJECT_DESCRIPTION_STAGE_NAME_MAX_LENGTH:
     'Stage description must be less than 25 characters long',

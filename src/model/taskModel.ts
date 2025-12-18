@@ -20,6 +20,11 @@ const taskSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    owner: {
+      type: String,
+      ref: 'User',
+      required: true,
+    },
   },
   {
     timestamps: true,

@@ -17,8 +17,10 @@ router
   .post(requireAuth, requireOwnerOrGod, addTasksToStage);
 
 // GET all tasks
-
-router.route('/:stageId').get(requireAuth, requireOwnerOrGod);
+// TODO check if there may be rout error mismatch with taskId
+router.route('/:stageId').get(requireAuth, requireOwnerOrGod, (req, res) => {
+  res.status(501).json({ message: 'Not implemented' });
+});
 
 // PATCH, DELETE task
 

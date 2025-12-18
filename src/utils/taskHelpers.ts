@@ -1,6 +1,7 @@
 import type { NextFunction } from 'express';
 import AppError from './appError';
 import { STATUSES } from './enums';
+import type { StageTaskInput } from './type';
 
 /**
  * Parses stage_task input which can be either an array or comma-separated string
@@ -9,7 +10,7 @@ import { STATUSES } from './enums';
  * @returns Array of task names, or null if validation fails
  */
 export const parseTaskNames = (
-  stage_task: any,
+  stage_task: StageTaskInput,
   next: NextFunction,
 ): string[] | null => {
   let taskNames: string[];
