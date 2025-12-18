@@ -358,6 +358,7 @@ export const addProjectStage = async (
       cluster_project_id: id,
       stage_name: req.body.stage_name,
       stage_description: req.body.stage_description,
+      owner: req.clerkUserId,
     });
 
     const taskNames = parseTaskNames(req.body.stage_tasks, next);
