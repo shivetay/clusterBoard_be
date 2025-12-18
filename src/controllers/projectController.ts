@@ -358,7 +358,6 @@ export const addProjectStage = async (
       cluster_project_id: id,
       stage_name: req.body.stage_name,
       stage_description: req.body.stage_description,
-      stage_tasks: req.body.stage_tasks,
     });
 
     const taskNames = parseTaskNames(req.body.stage_tasks, next);
@@ -368,6 +367,7 @@ export const addProjectStage = async (
         stage_id: createdStage._id,
         task_name: name,
         is_done: false,
+        owner: req.clerkUserId,
       })) || [];
 
     if (!taskNames) {
