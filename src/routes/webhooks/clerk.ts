@@ -3,6 +3,8 @@ import type { NextFunction, Request, Response, Router } from 'express';
 import express from 'express';
 import { Webhook } from 'svix';
 import ClusterProject from '../../model/projectModel';
+import ProjectStages from '../../model/stageModel';
+import Task from '../../model/taskModel';
 import User from '../../model/userModel';
 import { STATUSES } from '../../utils';
 import AppError from '../../utils/appError';
@@ -175,6 +177,8 @@ router.post(
 
           await User.findByIdAndDelete(mongoDBUserId?._id);
           await ClusterProject.deleteMany({ owner: id });
+          await ProjectStages.deleteMany({ owner: id });
+          await Task.deleteMany({ owner: id });
 
           return res.status(200).json({ message: 'User deleted from MongoDB' });
         }

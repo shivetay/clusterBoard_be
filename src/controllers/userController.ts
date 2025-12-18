@@ -30,9 +30,16 @@ export const getUserById = async (
 ) => {
   try {
     const { id } = req.params;
-    const user = await User.findOne({ clerk_id: id }).populate({
-      path: 'cluster_projects',
-    });
+    const user = await User.findOne({ clerk_id: id })
+      .populate({
+        path: 'cluster_projects',
+      })
+      .populate({
+        path: 'project_stages',
+      })
+      .populate({
+        path: 'stage_tasks',
+      });
 
     if (!user) {
       next(new AppError('AUTH_ERROR_USER_NOT_FOUND', 404));
