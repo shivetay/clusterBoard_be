@@ -29,6 +29,20 @@ userSchema.virtual('cluster_projects', {
   justOne: false,
 });
 
+userSchema.virtual('project_stages', {
+  ref: 'ProjectStages',
+  foreignField: 'owner',
+  localField: 'clerk_id',
+  justOne: false,
+});
+
+userSchema.virtual('stage_tasks', {
+  ref: 'Task',
+  foreignField: 'owner',
+  localField: 'clerk_id',
+  justOne: false,
+});
+
 const User = mongoose.model<IUserSchema>('User', userSchema);
 
 export default User;

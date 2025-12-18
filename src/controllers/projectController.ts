@@ -228,7 +228,16 @@ export const deleteProject = async (
 
     //remove stages and tasks associated with the project
     try {
-      await Task.deleteMany({ stage_id: id });
+      const projectStages = await ProjectStages.find({
+        cluster_project_id: id,
+      }).select('_id');
+
+      const stageIds = projectStages.map((stage) => stage._id);
+
+      if (stageIds.length > 0) {
+        await Task.deleteMany({ stage_id: { $in: stageIds } });
+      }
+
       await ProjectStages.deleteMany({
         cluster_project_id: id,
       });
@@ -239,6 +248,7 @@ export const deleteProject = async (
           STATUSES.SERVER_ERROR,
         ),
       );
+      return;
     }
 
     const deletedProject = await ClusterProject.findByIdAndDelete(id);
@@ -344,19 +354,11 @@ export const addProjectStage = async (
       return;
     }
 
-    const removeUnmutableData = filterAllowedFields(
-      req.body,
-      'project_name',
-      'project_description',
-      'investors',
-    );
-
     const createdStage = await ProjectStages.create({
       cluster_project_id: id,
       stage_name: req.body.stage_name,
       stage_description: req.body.stage_description,
       stage_tasks: req.body.stage_tasks,
-      removeUnmutableData,
     });
 
     const taskNames = parseTaskNames(req.body.stage_tasks, next);
@@ -367,6 +369,10 @@ export const addProjectStage = async (
         task_name: name,
         is_done: false,
       })) || [];
+
+    if (!taskNames) {
+      return;
+    }
 
     await Task.insertMany(mappedTasks);
 
