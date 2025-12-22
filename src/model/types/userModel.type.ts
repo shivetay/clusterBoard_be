@@ -9,6 +9,8 @@ export interface IUserSchema extends Document {
   project_stages: Array<IProjectStagesSchema>;
   stage_tasks: Array<IStageTaskSchema>;
   clerk_id: string;
+  user_name?: string;
+  user_email?: string;
 }
 
 export type TUserRoleType =

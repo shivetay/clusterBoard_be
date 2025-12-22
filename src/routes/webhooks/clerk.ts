@@ -12,7 +12,7 @@ import AppError from '../../utils/appError';
 const router: Router = express.Router();
 
 // POST for Clerk mongoDB sync
-
+// TODO add extenral id in clerk to link with mongoDB _id
 router.post(
   '/register',
   async (req: Request, res: Response, next: NextFunction) => {
