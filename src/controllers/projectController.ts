@@ -15,7 +15,10 @@ export const getAllProjects = async (
   next: NextFunction,
 ) => {
   try {
-    const projects = await ClusterProject.find();
+    const projects = await ClusterProject.find().populate({
+      path: 'investors_name',
+      select: 'user_name',
+    });
 
     res.status(STATUSES.SUCCESS).json({
       status: 'success',
@@ -38,12 +41,17 @@ export const getProjectById = async (
 ) => {
   try {
     const { id } = req.params;
-    const project = await ClusterProject.findById(id).populate({
-      path: 'project_stages',
-      populate: {
-        path: 'stage_tasks',
-      },
-    });
+    const project = await ClusterProject.findById(id)
+      .populate({
+        path: 'project_stages',
+        populate: {
+          path: 'stage_tasks',
+        },
+      })
+      .populate({
+        path: 'investors_name',
+        select: 'user_name',
+      });
 
     if (!project) {
       next(new AppError('PROJECT_NOT_FOUND', STATUSES.NOT_FOUND));
@@ -70,15 +78,18 @@ export const getAllUserProjects = async (
   try {
     const { id } = req.params;
     const user = await User.findOne({ clerk_id: id });
-
     if (!user) {
       next(new AppError('USER_NOT_FOUND', STATUSES.NOT_FOUND));
       return;
     }
 
     const projects = await ClusterProject.find({
-      $or: [{ owner: id }, { investors: id }],
+      $or: [{ 'owner.owner_id': id }, { investors: id }],
+    }).populate({
+      path: 'investors_name',
+      select: 'user_name',
     });
+
     res.status(STATUSES.SUCCESS).json({
       status: 'success',
       results: projects.length,
@@ -101,14 +112,14 @@ export const createProject = async (
   try {
     const {
       project_name,
-      owner,
+      owner: { owner_id, owner_name },
       investors,
       start_date,
       end_date,
       project_description,
     } = req.body;
 
-    const checkUserId = await User.findOne({ clerk_id: owner });
+    const checkUserId = await User.findOne({ clerk_id: owner_id });
 
     if (!checkUserId) {
       next(new AppError('AUTH_ERROR_USER_NOT_FOUND', STATUSES.NOT_FOUND));
@@ -117,7 +128,7 @@ export const createProject = async (
 
     const newProject = await ClusterProject.create({
       project_name,
-      owner,
+      owner: { owner_id, owner_name },
       investors,
       start_date,
       end_date,
@@ -393,5 +404,3 @@ export const addProjectStage = async (
     next(error);
   }
 };
-
-// TODO end project

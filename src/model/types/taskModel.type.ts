@@ -1,3 +1,5 @@
+import type { Document } from 'mongoose';
+
 export interface IStageTaskSchema extends Document {
   stage_id: string;
   task_name: string;

@@ -1,3 +1,4 @@
+import type { IClusterProjectSchema } from '../model/types';
 import type { IUserSchema } from '../model/types/userModel.type';
 
 declare global {
@@ -5,6 +6,7 @@ declare global {
     interface Request {
       user?: IUserSchema;
       clerkUserId?: string;
+      project?: IClusterProjectSchema;
     }
   }
 }
