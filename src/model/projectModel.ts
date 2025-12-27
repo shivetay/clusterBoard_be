@@ -38,9 +38,16 @@ const clusterProjectSchema = new mongoose.Schema(
       ],
     },
     owner: {
-      type: String,
-      ref: 'User',
-      required: true,
+      owner_id: {
+        type: String,
+        ref: 'User',
+        required: true,
+      },
+      owner_name: {
+        type: String,
+        ref: 'User',
+        required: true,
+      },
     },
     investors: [
       {
@@ -100,7 +107,7 @@ clusterProjectSchema.methods.verifyOwner = function (
     return;
   }
   // Verify the current user is the project owner
-  if (this.owner !== currentUserId) {
+  if (this.owner.owner_id !== currentUserId) {
     throw new AppError('FORBIDDEN_NOT_PROJECT_OWNER', STATUSES.FORBIDDEN);
   }
 };
@@ -112,7 +119,7 @@ clusterProjectSchema.methods.addInvestor = async function (
   if (this.investors.includes(clerkId)) {
     throw new AppError('INVESTOR_ALREADY_ADDED', STATUSES.BAD_REQUEST);
   }
-  if (this.owner === clerkId) {
+  if (this.owner.owner_id === clerkId) {
     throw new AppError('CANNOT_ADD_OWNER_AS_INVESTOR', STATUSES.BAD_REQUEST);
   }
   this.investors.push(clerkId);
@@ -145,7 +152,7 @@ clusterProjectSchema.methods.canAccessProject = function (
   if (userRole === 'cluster_god') {
     return true;
   }
-  if (this.owner === clerkId) {
+  if (this.owner.owner_id === clerkId) {
     return true;
   }
   if (this.investors.includes(clerkId)) {
@@ -162,7 +169,7 @@ clusterProjectSchema.methods.canInviteEmail = function (email: string): {
   const normalizedEmail = email.toLowerCase().trim();
 
   // Check if email belongs to owner
-  if (this.owner === normalizedEmail) {
+  if (this.owner.owner_id === normalizedEmail) {
     return { canInvite: false, reason: 'CANNOT_INVITE_PROJECT_OWNER' };
   }
 

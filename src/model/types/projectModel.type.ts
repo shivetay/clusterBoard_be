@@ -7,7 +7,10 @@ export interface IClusterProjectSchema extends Document {
   project_name: string;
   status: TProjectStatusType;
   investors: Array<string>;
-  owner: string;
+  owner: {
+    owner_id: string;
+    owner_name: string;
+  };
   verifyOwner: (currentUserId: string, clusterRole: TUserRoleType) => void;
   addInvestor: (clerkId: string) => Promise<void>;
   removeInvestor: (clerkId: string) => Promise<void>;

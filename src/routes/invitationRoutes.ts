@@ -17,20 +17,17 @@ import {
 const router: Router = express.Router();
 
 // POST invite investor (requires owner or cluster_god)
-router.route('/invite').post(
-  invitationRateLimit, // ⭐ RECOMMENDED
-  requireAuth,
-  requireOwnerOrGod,
-  inviteInvestor,
-);
-
-// GET invitation details by token (public endpoint for email links)
-router.route('/accept/:token').get(getInvitationByToken);
+router
+  .route('/invite')
+  .post(invitationRateLimit, requireAuth, requireOwnerOrGod, inviteInvestor);
 
 // POST accept invitation (requires authentication)
 router
   .route('/accept')
   .post(requireAuth, requireAnyAuthenticated, acceptInvitation);
+
+// GET invitation details by token (public endpoint for email links)
+router.route('/accept/:token').get(getInvitationByToken);
 
 // GET all invitations for a project (requires owner or cluster_god)
 router

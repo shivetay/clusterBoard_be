@@ -77,7 +77,7 @@ export const getAllUserProjects = async (
     }
 
     const projects = await ClusterProject.find({
-      $or: [{ owner: id }, { investors: id }],
+      $or: [{ 'owner.owner_id': id }, { investors: id }],
     });
     res.status(STATUSES.SUCCESS).json({
       status: 'success',
@@ -101,14 +101,14 @@ export const createProject = async (
   try {
     const {
       project_name,
-      owner,
+      owner: { owner_id, owner_name },
       investors,
       start_date,
       end_date,
       project_description,
     } = req.body;
 
-    const checkUserId = await User.findOne({ clerk_id: owner });
+    const checkUserId = await User.findOne({ clerk_id: owner_id });
 
     if (!checkUserId) {
       next(new AppError('AUTH_ERROR_USER_NOT_FOUND', STATUSES.NOT_FOUND));
@@ -117,7 +117,7 @@ export const createProject = async (
 
     const newProject = await ClusterProject.create({
       project_name,
-      owner,
+      owner: { owner_id, owner_name },
       investors,
       start_date,
       end_date,

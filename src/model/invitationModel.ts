@@ -70,7 +70,7 @@ const invitationSchema = new mongoose.Schema(
 );
 
 // Virtual populate for project
-invitationSchema.virtual('project_id', {
+invitationSchema.virtual('project', {
   ref: 'ClusterProject',
   localField: 'project_id',
   foreignField: '_id',
@@ -78,7 +78,7 @@ invitationSchema.virtual('project_id', {
 });
 
 // Virtual populate for inviter
-invitationSchema.virtual('inviter_id', {
+invitationSchema.virtual('inviter', {
   ref: 'User',
   localField: 'inviter_id',
   foreignField: 'clerk_id',

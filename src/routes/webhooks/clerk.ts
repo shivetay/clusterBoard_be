@@ -72,13 +72,21 @@ router.post(
         case 'user.created': {
           // TypeScript narrows evt.data to UserJSON for user.created events
           const userData = evt.data;
-          const { id, unsafe_metadata, public_metadata } = userData;
+          const {
+            id,
+            unsafe_metadata,
+            public_metadata,
+            first_name,
+            last_name,
+            email_addresses,
+          } = userData;
 
           if (!id || typeof id !== 'string' || id.trim() === '') {
             next(new AppError('INVALID_USER_ID', STATUSES.BAD_REQUEST));
             return;
           }
-
+          const fullName = `${first_name ?? ''} ${last_name ?? ''}`.trim();
+          const userEmail = email_addresses?.[0]?.email_address || undefined;
           const providedRole =
             public_metadata?.role || unsafe_metadata?.role || 'cluster_owner';
           const role = validRoles.includes(
@@ -92,6 +100,8 @@ router.post(
             { clerk_id: id },
             {
               clerk_id: id,
+              user_name: fullName || undefined,
+              user_email: userEmail,
               role: validRoles.includes(
                 (public_metadata?.role ||
                   unsafe_metadata?.role) as (typeof validRoles)[number],
@@ -112,12 +122,22 @@ router.post(
         case 'user.updated': {
           // TypeScript narrows evt.data to UserJSON for user.updated events
           const userData = evt.data;
-          const { id, unsafe_metadata, public_metadata } = userData;
+          const {
+            id,
+            unsafe_metadata,
+            public_metadata,
+            first_name,
+            last_name,
+            email_addresses,
+          } = userData;
 
           if (!id || typeof id !== 'string' || id.trim() === '') {
             next(new AppError('INVALID_USER_ID', STATUSES.BAD_REQUEST));
             return;
           }
+
+          const fullName = `${first_name ?? ''} ${last_name ?? ''}`.trim();
+          const userEmail = email_addresses?.[0]?.email_address || undefined;
 
           const providedRole =
             public_metadata?.role || unsafe_metadata?.role || 'cluster_owner';
@@ -132,6 +152,8 @@ router.post(
           const updatedUser = await User.findOneAndUpdate(
             { clerk_id: id },
             {
+              user_name: fullName || undefined,
+              user_email: userEmail,
               role: validRoles.includes(
                 (public_metadata?.role ||
                   unsafe_metadata?.role) as (typeof validRoles)[number],
@@ -176,7 +198,7 @@ router.post(
           }
 
           await User.findByIdAndDelete(mongoDBUserId?._id);
-          await ClusterProject.deleteMany({ owner: id });
+          await ClusterProject.deleteMany({ 'owner.owner_id': id });
           await ProjectStages.deleteMany({ owner: id });
           await Task.deleteMany({ owner: id });
 

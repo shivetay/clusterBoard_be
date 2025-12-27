@@ -1,8 +1,8 @@
+import { clerkClient } from '@clerk/express';
 import type { NextFunction, Request, Response } from 'express';
 import validator from 'validator';
 import Invitation from '../model/invitationModel';
 import ClusterProject from '../model/projectModel';
-import User from '../model/userModel';
 import { InvitationService } from '../services';
 import { STATUSES } from '../utils';
 import AppError from '../utils/appError';
@@ -123,7 +123,6 @@ export const acceptInvitation = async (
 ) => {
   try {
     const { token } = req.body;
-
     if (!token) {
       next(new AppError('TOKEN_REQUIRED', STATUSES.BAD_REQUEST));
       return;
@@ -135,8 +134,8 @@ export const acceptInvitation = async (
     }
 
     // Get user email (required for verification)
-    const user = await User.findOne({ clerk_id: req.clerkUserId });
-    if (!user?.user_email) {
+    const clerkUser = await clerkClient.users.getUser(req.clerkUserId);
+    if (!clerkUser.emailAddresses[0]?.emailAddress) {
       next(new AppError('USER_EMAIL_NOT_FOUND', STATUSES.BAD_REQUEST));
       return;
     }
@@ -146,7 +145,7 @@ export const acceptInvitation = async (
       await InvitationService.acceptInvitation(
         token,
         req.clerkUserId,
-        user.user_email,
+        clerkUser.emailAddresses[0]?.emailAddress,
       );
 
     res.status(STATUSES.SUCCESS).json({

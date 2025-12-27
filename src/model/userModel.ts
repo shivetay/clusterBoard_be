@@ -32,7 +32,7 @@ const userSchema = new mongoose.Schema<IUserSchema>(
 // virtual populate for projects
 userSchema.virtual('cluster_projects', {
   ref: 'ClusterProject',
-  foreignField: 'owner',
+  foreignField: 'owner.owner_id',
   localField: 'clerk_id',
   justOne: false,
 });
