@@ -20,11 +20,16 @@ export const getAllProjects = async (
       select: 'user_name',
     });
 
+    const projectsWithOwnerName = projects.map((project) => ({
+      ...project.toObject(),
+      owner_name: project.owner?.owner_name,
+    }));
+
     res.status(STATUSES.SUCCESS).json({
       status: 'success',
-      results: projects.length,
+      results: projectsWithOwnerName.length,
       data: {
-        projects,
+        projects: projectsWithOwnerName,
       },
     });
   } catch (error) {
@@ -41,6 +46,12 @@ export const getProjectById = async (
 ) => {
   try {
     const { id } = req.params;
+
+    if (!req.user || !req.clerkUserId) {
+      next(new AppError('AUTH_ERROR_USER_NOT_FOUND', STATUSES.UNAUTHORIZED));
+      return;
+    }
+
     const project = await ClusterProject.findById(id)
       .populate({
         path: 'project_stages',
@@ -58,10 +69,24 @@ export const getProjectById = async (
       return;
     }
 
+    // Add access level information like getAllUserProjects does
+    const accessLevel = project.getUserAccessLevel(
+      req.clerkUserId,
+      req.user.role,
+    );
+
+    const projectWithAccess = {
+      ...project.toObject(),
+      user_access: accessLevel,
+      is_owner: accessLevel === 'owner',
+      is_investor: accessLevel === 'investor',
+      owner_name: project.owner?.owner_name,
+    };
+
     res.status(STATUSES.SUCCESS).json({
       status: 'success',
       data: {
-        project,
+        project: projectWithAccess,
       },
     });
   } catch (error) {
@@ -75,26 +100,68 @@ export const getAllUserProjects = async (
   res: Response,
   next: NextFunction,
 ) => {
+  // try {
+  //   const { id } = req.params;
+  //   const user = await User.findOne({ clerk_id: id });
+  //   if (!user) {
+  //     next(new AppError('USER_NOT_FOUND', STATUSES.NOT_FOUND));
+  //     return;
+  //   }
+
+  //   const projects = await ClusterProject.find({
+  //     $or: [{ 'owner.owner_id': id }, { investors: id }],
+  //   }).populate({
+  //     path: 'investors_name',
+  //     select: 'user_name',
+  //   });
+
+  //   res.status(STATUSES.SUCCESS).json({
+  //     status: 'success',
+  //     results: projects.length,
+  //     data: {
+  //       projects,
+  //     },
+  //   });
+  // } catch (error) {
+  //   next(error);
+  // }
+
   try {
-    const { id } = req.params;
-    const user = await User.findOne({ clerk_id: id });
-    if (!user) {
-      next(new AppError('USER_NOT_FOUND', STATUSES.NOT_FOUND));
+    if (!req.user || !req.clerkUserId) {
+      next(new AppError('AUTH_ERROR_USER_NOT_FOUND', STATUSES.UNAUTHORIZED));
       return;
     }
 
     const projects = await ClusterProject.find({
-      $or: [{ 'owner.owner_id': id }, { investors: id }],
+      $or: [
+        { 'owner.owner_id': req.clerkUserId },
+        { investors: req.clerkUserId },
+      ],
     }).populate({
       path: 'investors_name',
       select: 'user_name',
     });
 
+    const projectsWithAccess = projects.map((project) => {
+      const accessLevel = project.getUserAccessLevel(
+        req.clerkUserId!,
+        req.user!.role,
+      );
+
+      return {
+        ...project.toObject(),
+        user_access: accessLevel,
+        is_owner: accessLevel === 'owner',
+        is_investor: accessLevel === 'investor',
+        owner_name: project.owner?.owner_name,
+      };
+    });
+
     res.status(STATUSES.SUCCESS).json({
       status: 'success',
-      results: projects.length,
+      results: projectsWithAccess.length,
       data: {
-        projects,
+        projects: projectsWithAccess,
       },
     });
   } catch (error) {
@@ -372,25 +439,26 @@ export const addProjectStage = async (
       owner: req.clerkUserId,
     });
 
-    const taskNames = parseTaskNames(req.body.stage_tasks, next);
+    // Tasks are optional during stage creation - they can be added separately
+    if (req.body.stage_tasks) {
+      const taskNames = parseTaskNames(req.body.stage_tasks, next);
 
-    const mappedTasks =
-      taskNames?.map((name) => ({
-        stage_id: createdStage._id,
-        task_name: name,
-        is_done: false,
-        owner: req.clerkUserId,
-      })) || [];
+      // If parseTaskNames returns null, it means it already called next() with an error
+      if (!taskNames) {
+        return;
+      }
 
-    if (!taskNames) {
-      return;
-    }
+      // Only create tasks if at least one task name was provided after parsing
+      if (taskNames.length > 0) {
+        const mappedTasks = taskNames.map((name) => ({
+          stage_id: createdStage._id,
+          task_name: name,
+          is_done: false,
+          owner: req.clerkUserId,
+        }));
 
-    await Task.insertMany(mappedTasks);
-
-    if (!createdStage) {
-      next(new AppError('PROJECT_NOT_FOUND', STATUSES.NOT_FOUND));
-      return;
+        await Task.insertMany(mappedTasks);
+      }
     }
 
     res.status(STATUSES.SUCCESS).json({

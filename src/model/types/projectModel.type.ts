@@ -17,6 +17,10 @@ export interface IClusterProjectSchema extends Document {
   isInvestor: (clerkId: string) => boolean;
   canAccessProject: (clerkId: string, userRole: TUserRoleType) => boolean;
   canInviteEmail: (email: string) => { canInvite: boolean; reason?: string };
+  getUserAccessLevel: (
+    clerkId: string,
+    userRole: TUserRoleType,
+  ) => 'owner' | 'investor' | 'none';
 }
 
 export type TProjectStatusType =

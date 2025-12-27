@@ -169,7 +169,23 @@ clusterProjectSchema.methods.canAccessProject = function (
   return false;
 };
 
-// ⭐ RECOMMENDED: Check if email can be invited
+// Get user's access level for this specific project
+clusterProjectSchema.methods.getUserAccessLevel = function (
+  clerkId: string,
+  userRole: TUserRoleType,
+): 'owner' | 'investor' | 'none' {
+  if (userRole === 'cluster_god' || this.owner.owner_id === clerkId) {
+    return 'owner';
+  }
+
+  // ✅ Check project-specific investor status
+  if (this.isInvestor(clerkId)) {
+    return 'investor';
+  }
+
+  return 'none';
+};
+
 clusterProjectSchema.methods.canInviteEmail = function (email: string): {
   canInvite: boolean;
   reason?: string;
@@ -188,6 +204,10 @@ clusterProjectSchema.methods.canInviteEmail = function (email: string): {
 
   return { canInvite: true };
 };
+
+clusterProjectSchema.index({ investors: 1 });
+clusterProjectSchema.index({ owner: 1, investors: 1 });
+clusterProjectSchema.index({ investors: 1, _id: 1 });
 
 const ClusterProject = mongoose.model<IClusterProjectSchema>(
   'ClusterProject',

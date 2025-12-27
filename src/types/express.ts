@@ -7,6 +7,7 @@ declare global {
       user?: IUserSchema;
       clerkUserId?: string;
       project?: IClusterProjectSchema;
+      projectAccessLevel?: 'owner' | 'investor' | 'none';
     }
   }
 }
