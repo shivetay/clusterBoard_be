@@ -55,6 +55,7 @@ const clusterProjectSchema = new mongoose.Schema(
         ref: 'User',
       },
     ],
+
     project_status: {
       type: String,
       default: PROJECT_STATUS_VALUES[3],
@@ -78,6 +79,13 @@ clusterProjectSchema.virtual('project_stages', {
   ref: 'ProjectStages',
   foreignField: 'cluster_project_id',
   localField: '_id',
+  justOne: false,
+});
+
+clusterProjectSchema.virtual('investors_name', {
+  ref: 'User',
+  foreignField: 'clerk_id',
+  localField: 'investors',
   justOne: false,
 });
 
