@@ -404,5 +404,3 @@ export const addProjectStage = async (
     next(error);
   }
 };
-
-// TODO end project

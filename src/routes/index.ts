@@ -1,3 +1,4 @@
+import investorRoutes from './investorRoutes';
 import invitationRoutes from './invitationRoutes';
 import projectRoutes from './projectRoutes';
 import stageRoutes from './stageRoutes';
@@ -12,4 +13,5 @@ export {
   clerkWebhookRouter,
   tasksRoutes,
   stageRoutes,
+  investorRoutes,
 };
