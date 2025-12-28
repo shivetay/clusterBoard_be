@@ -3,6 +3,7 @@ import type { NextFunction, Request, Response } from 'express';
 import validator from 'validator';
 import Invitation from '../model/invitationModel';
 import ClusterProject from '../model/projectModel';
+import User from '../model/userModel';
 import { InvitationService } from '../services';
 import { STATUSES } from '../utils';
 import AppError from '../utils/appError';
@@ -78,18 +79,25 @@ export const getInvitationByToken = async (
       return;
     }
 
-    const invitation = await Invitation.findByToken(token);
-    if (invitation) {
-      await invitation.populate({
-        path: 'project',
-        select: 'project_name project_description owner',
-      });
-    }
+    // Find invitation by token regardless of status to check cancellation
+    const invitation = await Invitation.findOne({ token });
 
     if (!invitation) {
       next(new AppError('INVITATION_NOT_FOUND', STATUSES.NOT_FOUND));
       return;
     }
+
+    // Check if invitation is cancelled first
+    if (invitation.status === 'cancelled') {
+      next(new AppError('INVITATION_CANCELLED', STATUSES.BAD_REQUEST));
+      return;
+    }
+
+    // Populate project if invitation exists
+    await invitation.populate({
+      path: 'project',
+      select: 'project_name project_description owner',
+    });
 
     if (!invitation.isValid()) {
       if (invitation.status === 'accepted') {
@@ -195,16 +203,54 @@ export const getProjectInvitations = async (
     }
 
     const invitations = await Invitation.findByProject(projectId);
-    await invitations[0]?.populate({
-      path: 'project',
-      select: 'project_name',
-    });
+
+    // Populate project and inviter for all invitations
+    await Promise.all(
+      invitations.map((invitation) =>
+        Promise.all([
+          invitation.populate({
+            path: 'project',
+            select: 'project_name owner',
+          }),
+          invitation.populate({
+            path: 'inviter',
+            select: 'user_name',
+          }),
+        ]),
+      ),
+    );
+
+    // Get recipient names by looking up users by email
+    const invitationsWithRecipientNames = await Promise.all(
+      invitations.map(async (invitation) => {
+        const invitationObj = invitation.toObject();
+
+        // Add inviter name if populated
+        if (invitationObj.inviter?.user_name) {
+          invitationObj.inviter_name = invitationObj.inviter.user_name;
+        }
+        // Remove inviter object to keep response clean
+        delete invitationObj.inviter;
+
+        // Look up user by email to get recipient name
+        const recipientUser = await User.findOne({
+          user_email: invitation.invitee_email.toLowerCase().trim(),
+        });
+
+        // Add recipient name if found
+        if (recipientUser?.user_name) {
+          invitationObj.recipient_name = recipientUser.user_name;
+        }
+
+        return invitationObj;
+      }),
+    );
 
     res.status(STATUSES.SUCCESS).json({
       status: 'success',
-      results: invitations.length,
+      results: invitationsWithRecipientNames.length,
       data: {
-        invitations,
+        invitations: invitationsWithRecipientNames,
       },
     });
   } catch (error) {

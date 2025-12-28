@@ -24,7 +24,6 @@ export interface IInvitationSchema extends Document {
   accept: () => Promise<void>;
   cancel: () => Promise<void>;
   expire: () => Promise<void>;
-  // ⭐ RECOMMENDED: Enhanced method
   acceptInvitation: (
     clerkId: string,
     userEmail: string,
