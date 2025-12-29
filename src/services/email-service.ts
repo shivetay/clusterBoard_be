@@ -16,6 +16,17 @@ type TInvitationEmailData = {
   message?: string;
 };
 
+const escapeHtml = (value?: string | null): string => {
+  if (!value) return '';
+
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+};
+
 const DEFAULT_PORT_NUMBER = 587;
 let transporter: Transporter | null = null;
 
@@ -49,7 +60,7 @@ export const sendEmail = async (options: TEmailOptions) => {
 
   try {
     const info = await emailTransporter.sendMail({
-      from: process.env.EMAIL_FROM || process.env.EMAIL_USER || 'test_mail',
+      from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
       to: options.to,
       subject: options.subject,
       html: options.html,
@@ -85,6 +96,10 @@ export const sendInvestorInvitationEmail = async (
   const { inviteeEmail, projectName, inviterName, invitationLink, message } =
     data;
 
+  const safeProjectName = escapeHtml(projectName);
+  const safeInviterName = escapeHtml(inviterName);
+  const safeMessage = escapeHtml(message);
+
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
   const fullInvitationLink = `${frontendUrl}${invitationLink}`;
 
@@ -107,10 +122,10 @@ export const sendInvestorInvitationEmail = async (
         </div>
         
         <!-- Main content -->
-        ${inviterName ? `<p style="margin: 0 0 16px 0; color: #e0e0e0; font-size: 16px;">Hi there,</p><p style="margin: 0 0 24px 0; color: #e0e0e0; font-size: 16px;"><strong style="color: #F2B437;">${inviterName}</strong> has invited you to collaborate on the project <strong style="color: #0FA3B1;">"${projectName}"</strong> as an investor.</p>` : `<p style="margin: 0 0 16px 0; color: #e0e0e0; font-size: 16px;">Hi there,</p><p style="margin: 0 0 24px 0; color: #e0e0e0; font-size: 16px;">You've been invited to collaborate on the project <strong style="color: #0FA3B1;">"${projectName}"</strong> as an investor.</p>`}
+        ${inviterName ? `<p style="margin: 0 0 16px 0; color: #e0e0e0; font-size: 16px;">Hi there,</p><p style="margin: 0 0 24px 0; color: #e0e0e0; font-size: 16px;"><strong style="color: #F2B437;">${safeInviterName}</strong> has invited you to collaborate on the project <strong style="color: #0FA3B1;">"${safeProjectName}"</strong> as an investor.</p>` : `<p style="margin: 0 0 16px 0; color: #e0e0e0; font-size: 16px;">Hi there,</p><p style="margin: 0 0 24px 0; color: #e0e0e0; font-size: 16px;">You've been invited to collaborate on the project <strong style="color: #0FA3B1;">"${safeProjectName}"</strong> as an investor.</p>`}
         
         <!-- Message box if present -->
-        ${message ? `<div style="background: linear-gradient(135deg, rgba(15, 163, 177, 0.15) 0%, rgba(15, 163, 177, 0.08) 100%); padding: 20px; border-left: 4px solid #0FA3B1; margin: 24px 0; border-radius: 6px;"><p style="margin: 0; font-style: italic; color: #d0d0d0; font-size: 15px;">"${message}"</p></div>` : ''}
+        ${message ? `<div style="background: linear-gradient(135deg, rgba(15, 163, 177, 0.15) 0%, rgba(15, 163, 177, 0.08) 100%); padding: 20px; border-left: 4px solid #0FA3B1; margin: 24px 0; border-radius: 6px;"><p style="margin: 0; font-style: italic; color: #d0d0d0; font-size: 15px;">"${safeMessage}"</p></div>` : ''}
         
         <!-- CTA Button -->
         <div style="text-align: center; margin: 36px 0;">

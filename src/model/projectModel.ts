@@ -1,3 +1,4 @@
+import { clerkClient } from '@clerk/express';
 import mongoose from 'mongoose';
 import { LOCALES } from '../locales';
 import { STATUSES } from '../utils';
@@ -45,7 +46,6 @@ const clusterProjectSchema = new mongoose.Schema(
       },
       owner_name: {
         type: String,
-        ref: 'User',
         required: true,
       },
     },
@@ -186,23 +186,40 @@ clusterProjectSchema.methods.getUserAccessLevel = function (
   return 'none';
 };
 
-clusterProjectSchema.methods.canInviteEmail = function (email: string): {
+clusterProjectSchema.methods.canInviteEmail = async function (
+  email: string,
+): Promise<{
   canInvite: boolean;
   reason?: string;
-} {
-  const normalizedEmail = email.toLowerCase().trim();
+}> {
+  try {
+    const normalizedEmail = email.toLowerCase().trim();
 
-  // Check if email belongs to owner
-  if (this.owner.owner_id === normalizedEmail) {
-    return { canInvite: false, reason: 'CANNOT_INVITE_PROJECT_OWNER' };
+    const ownerUser = await clerkClient.users.getUser(this.owner.owner_id);
+    const primaryEmail =
+      ownerUser.emailAddresses.find(
+        (addr) => addr.id === ownerUser.primaryEmailAddressId,
+      ) ?? ownerUser.emailAddresses[0];
+    const ownerPrimaryEmail = primaryEmail?.emailAddress?.toLowerCase().trim();
+
+    if (ownerPrimaryEmail && ownerPrimaryEmail === normalizedEmail) {
+      return { canInvite: false, reason: 'CANNOT_INVITE_PROJECT_OWNER' };
+    }
+
+    const inviteeList = await clerkClient.users.getUserList({
+      emailAddress: [normalizedEmail],
+      limit: 1,
+    });
+    const inviteeClerkId = inviteeList.data[0]?.id;
+
+    if (inviteeClerkId && this.investors.includes(inviteeClerkId)) {
+      return { canInvite: false, reason: 'INVESTOR_ALREADY_ADDED' };
+    }
+
+    return { canInvite: true };
+  } catch (error) {
+    throw new AppError('INVITATION_VALIDATION_FAILED', STATUSES.SERVER_ERROR);
   }
-
-  // Check if already investor
-  if (this.investors.includes(normalizedEmail)) {
-    return { canInvite: false, reason: 'INVESTOR_ALREADY_ADDED' };
-  }
-
-  return { canInvite: true };
 };
 
 clusterProjectSchema.index({ investors: 1 });

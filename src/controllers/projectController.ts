@@ -100,32 +100,6 @@ export const getAllUserProjects = async (
   res: Response,
   next: NextFunction,
 ) => {
-  // try {
-  //   const { id } = req.params;
-  //   const user = await User.findOne({ clerk_id: id });
-  //   if (!user) {
-  //     next(new AppError('USER_NOT_FOUND', STATUSES.NOT_FOUND));
-  //     return;
-  //   }
-
-  //   const projects = await ClusterProject.find({
-  //     $or: [{ 'owner.owner_id': id }, { investors: id }],
-  //   }).populate({
-  //     path: 'investors_name',
-  //     select: 'user_name',
-  //   });
-
-  //   res.status(STATUSES.SUCCESS).json({
-  //     status: 'success',
-  //     results: projects.length,
-  //     data: {
-  //       projects,
-  //     },
-  //   });
-  // } catch (error) {
-  //   next(error);
-  // }
-
   try {
     if (!req.user || !req.clerkUserId) {
       next(new AppError('AUTH_ERROR_USER_NOT_FOUND', STATUSES.UNAUTHORIZED));

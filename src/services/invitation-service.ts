@@ -24,7 +24,7 @@ export class InvitationService {
     }
 
     // Check if email can be invited (using model method)
-    const { canInvite, reason } = project.canInviteEmail(inviteeEmail);
+    const { canInvite, reason } = await project.canInviteEmail(inviteeEmail);
     if (!canInvite) {
       throw new AppError(reason ?? 'INVITE_NOT_ALLOWED', STATUSES.BAD_REQUEST);
     }
@@ -53,6 +53,20 @@ export class InvitationService {
     } catch (emailError) {
       console.error('Failed to send invitation email:', emailError);
       // Optionally: mark invitation with a flag for retry
+      try {
+        await Invitation.updateOne(
+          { _id: invitation._id },
+          {
+            $set: {
+              email_send_failed: true,
+              last_email_error: String(emailError),
+              last_email_error_at: new Date(),
+            },
+          },
+        );
+      } catch (markError) {
+        console.error('Failed to mark invitation for email retry:', markError);
+      }
     }
 
     return invitation;

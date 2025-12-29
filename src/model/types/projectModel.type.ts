@@ -16,7 +16,10 @@ export interface IClusterProjectSchema extends Document {
   removeInvestor: (clerkId: string) => Promise<void>;
   isInvestor: (clerkId: string) => boolean;
   canAccessProject: (clerkId: string, userRole: TUserRoleType) => boolean;
-  canInviteEmail: (email: string) => { canInvite: boolean; reason?: string };
+  canInviteEmail: (email: string) => Promise<{
+    canInvite: boolean;
+    reason?: string;
+  }>;
   getUserAccessLevel: (
     clerkId: string,
     userRole: TUserRoleType,

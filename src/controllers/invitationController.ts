@@ -48,16 +48,15 @@ export const inviteInvestor = async (
     }
 
     // Use service layer (or model directly if no service layer)
-    const invitation = await InvitationService.createAndSendInvitation(
+    await InvitationService.createAndSendInvitation(
       project_id,
       req.clerkUserId,
       invitee_email,
-      message,
     );
 
     res.status(STATUSES.CREATED).json({
       status: 'success',
-      data: { invitation },
+
       message: 'INVITATION_SENT',
     });
   } catch (error) {
@@ -158,10 +157,6 @@ export const acceptInvitation = async (
 
     res.status(STATUSES.SUCCESS).json({
       status: 'success',
-      data: {
-        project,
-        alreadyInvestor,
-      },
       message: alreadyInvestor ? 'ALREADY_INVESTOR' : 'INVITATION_ACCEPTED',
     });
   } catch (error) {
