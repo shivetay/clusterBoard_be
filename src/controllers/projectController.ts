@@ -15,13 +15,21 @@ export const getAllProjects = async (
   next: NextFunction,
 ) => {
   try {
-    const projects = await ClusterProject.find();
+    const projects = await ClusterProject.find().populate({
+      path: 'investors_name',
+      select: 'user_name',
+    });
+
+    const projectsWithOwnerName = projects.map((project) => ({
+      ...project.toObject(),
+      owner_name: project.owner?.owner_name,
+    }));
 
     res.status(STATUSES.SUCCESS).json({
       status: 'success',
-      results: projects.length,
+      results: projectsWithOwnerName.length,
       data: {
-        projects,
+        projects: projectsWithOwnerName,
       },
     });
   } catch (error) {
@@ -38,22 +46,47 @@ export const getProjectById = async (
 ) => {
   try {
     const { id } = req.params;
-    const project = await ClusterProject.findById(id).populate({
-      path: 'project_stages',
-      populate: {
-        path: 'stage_tasks',
-      },
-    });
+
+    if (!req.user || !req.clerkUserId) {
+      next(new AppError('AUTH_ERROR_USER_NOT_FOUND', STATUSES.UNAUTHORIZED));
+      return;
+    }
+
+    const project = await ClusterProject.findById(id)
+      .populate({
+        path: 'project_stages',
+        populate: {
+          path: 'stage_tasks',
+        },
+      })
+      .populate({
+        path: 'investors_name',
+        select: 'user_name',
+      });
 
     if (!project) {
       next(new AppError('PROJECT_NOT_FOUND', STATUSES.NOT_FOUND));
       return;
     }
 
+    // Add access level information like getAllUserProjects does
+    const accessLevel = project.getUserAccessLevel(
+      req.clerkUserId,
+      req.user.role,
+    );
+
+    const projectWithAccess = {
+      ...project.toObject(),
+      user_access: accessLevel,
+      is_owner: accessLevel === 'owner',
+      is_investor: accessLevel === 'investor',
+      owner_name: project.owner?.owner_name,
+    };
+
     res.status(STATUSES.SUCCESS).json({
       status: 'success',
       data: {
-        project,
+        project: projectWithAccess,
       },
     });
   } catch (error) {
@@ -68,22 +101,42 @@ export const getAllUserProjects = async (
   next: NextFunction,
 ) => {
   try {
-    const { id } = req.params;
-    const user = await User.findOne({ clerk_id: id });
-
-    if (!user) {
-      next(new AppError('USER_NOT_FOUND', STATUSES.NOT_FOUND));
+    if (!req.user || !req.clerkUserId) {
+      next(new AppError('AUTH_ERROR_USER_NOT_FOUND', STATUSES.UNAUTHORIZED));
       return;
     }
 
+    // TODO may influence viewing projects
     const projects = await ClusterProject.find({
-      $or: [{ owner: id }, { investors: id }],
+      $or: [
+        { 'owner.owner_id': req.clerkUserId },
+        { investors: req.clerkUserId },
+      ],
+    }).populate({
+      path: 'investors_name',
+      select: 'user_name',
     });
+
+    const projectsWithAccess = projects.map((project) => {
+      const accessLevel = project.getUserAccessLevel(
+        req.clerkUserId!,
+        req.user!.role,
+      );
+
+      return {
+        ...project.toObject(),
+        user_access: accessLevel,
+        is_owner: accessLevel === 'owner',
+        is_investor: accessLevel === 'investor',
+        owner_name: project.owner?.owner_name,
+      };
+    });
+
     res.status(STATUSES.SUCCESS).json({
       status: 'success',
-      results: projects.length,
+      results: projectsWithAccess.length,
       data: {
-        projects,
+        projects: projectsWithAccess,
       },
     });
   } catch (error) {
@@ -101,14 +154,14 @@ export const createProject = async (
   try {
     const {
       project_name,
-      owner,
+      owner: { owner_id, owner_name },
       investors,
       start_date,
       end_date,
       project_description,
     } = req.body;
 
-    const checkUserId = await User.findOne({ clerk_id: owner });
+    const checkUserId = await User.findOne({ clerk_id: owner_id });
 
     if (!checkUserId) {
       next(new AppError('AUTH_ERROR_USER_NOT_FOUND', STATUSES.NOT_FOUND));
@@ -117,7 +170,7 @@ export const createProject = async (
 
     const newProject = await ClusterProject.create({
       project_name,
-      owner,
+      owner: { owner_id, owner_name },
       investors,
       start_date,
       end_date,
@@ -361,25 +414,26 @@ export const addProjectStage = async (
       owner: req.clerkUserId,
     });
 
-    const taskNames = parseTaskNames(req.body.stage_tasks, next);
+    // Tasks are optional during stage creation - they can be added separately
+    if (req.body.stage_tasks) {
+      const taskNames = parseTaskNames(req.body.stage_tasks, next);
 
-    const mappedTasks =
-      taskNames?.map((name) => ({
-        stage_id: createdStage._id,
-        task_name: name,
-        is_done: false,
-        owner: req.clerkUserId,
-      })) || [];
+      // If parseTaskNames returns null, it means it already called next() with an error
+      if (!taskNames) {
+        return;
+      }
 
-    if (!taskNames) {
-      return;
-    }
+      // Only create tasks if at least one task name was provided after parsing
+      if (taskNames.length > 0) {
+        const mappedTasks = taskNames.map((name) => ({
+          stage_id: createdStage._id,
+          task_name: name,
+          is_done: false,
+          owner: req.clerkUserId,
+        }));
 
-    await Task.insertMany(mappedTasks);
-
-    if (!createdStage) {
-      next(new AppError('PROJECT_NOT_FOUND', STATUSES.NOT_FOUND));
-      return;
+        await Task.insertMany(mappedTasks);
+      }
     }
 
     res.status(STATUSES.SUCCESS).json({
@@ -393,5 +447,3 @@ export const addProjectStage = async (
     next(error);
   }
 };
-
-// TODO end project

@@ -15,6 +15,12 @@ export const addTasksToStage = async (
     const { stageId } = req.params;
     const { stage_task } = req.body;
 
+    // Ensure user is authenticated
+    if (!req.user || !req.clerkUserId) {
+      next(new AppError('AUTH_ERROR_USER_NOT_FOUND', STATUSES.UNAUTHORIZED));
+      return;
+    }
+
     const stage = await ProjectStages.findById(stageId);
 
     if (!stage) {
@@ -43,11 +49,12 @@ export const addTasksToStage = async (
       return;
     }
 
-    // Create task documents
+    // Create task documents with owner field
     const taskDocuments = taskNames.map((taskName) => ({
       stage_id: stageId,
       task_name: taskName,
       is_done: false,
+      owner: req.clerkUserId,
     }));
 
     // Bulk insert

@@ -1,3 +1,4 @@
+import { clerkClient } from '@clerk/express';
 import mongoose from 'mongoose';
 import { LOCALES } from '../locales';
 import { STATUSES } from '../utils';
@@ -38,9 +39,15 @@ const clusterProjectSchema = new mongoose.Schema(
       ],
     },
     owner: {
-      type: String,
-      ref: 'User',
-      required: true,
+      owner_id: {
+        type: String,
+        ref: 'User',
+        required: true,
+      },
+      owner_name: {
+        type: String,
+        required: true,
+      },
     },
     investors: [
       {
@@ -48,6 +55,7 @@ const clusterProjectSchema = new mongoose.Schema(
         ref: 'User',
       },
     ],
+
     project_status: {
       type: String,
       default: PROJECT_STATUS_VALUES[3],
@@ -71,6 +79,13 @@ clusterProjectSchema.virtual('project_stages', {
   ref: 'ProjectStages',
   foreignField: 'cluster_project_id',
   localField: '_id',
+  justOne: false,
+});
+
+clusterProjectSchema.virtual('investors_name', {
+  ref: 'User',
+  foreignField: 'clerk_id',
+  localField: 'investors',
   justOne: false,
 });
 
@@ -100,10 +115,116 @@ clusterProjectSchema.methods.verifyOwner = function (
     return;
   }
   // Verify the current user is the project owner
-  if (this.owner !== currentUserId) {
+  if (this.owner.owner_id !== currentUserId) {
     throw new AppError('FORBIDDEN_NOT_PROJECT_OWNER', STATUSES.FORBIDDEN);
   }
 };
+
+// Add investor to project
+clusterProjectSchema.methods.addInvestor = async function (
+  clerkId: string,
+): Promise<void> {
+  if (this.investors.includes(clerkId)) {
+    throw new AppError('INVESTOR_ALREADY_ADDED', STATUSES.BAD_REQUEST);
+  }
+  if (this.owner.owner_id === clerkId) {
+    throw new AppError('CANNOT_ADD_OWNER_AS_INVESTOR', STATUSES.BAD_REQUEST);
+  }
+  this.investors.push(clerkId);
+  await this.save();
+};
+
+// Remove investor from project
+clusterProjectSchema.methods.removeInvestor = async function (
+  clerkId: string,
+): Promise<void> {
+  if (!this.investors.includes(clerkId)) {
+    throw new AppError('INVESTOR_NOT_FOUND', STATUSES.NOT_FOUND);
+  }
+  this.investors = this.investors.filter(
+    (investor: string) => investor !== clerkId,
+  );
+  await this.save();
+};
+
+// Check if user is an investor
+clusterProjectSchema.methods.isInvestor = function (clerkId: string): boolean {
+  return this.investors.includes(clerkId);
+};
+
+// Check if user can access project (owner, investor, or cluster_god)
+clusterProjectSchema.methods.canAccessProject = function (
+  clerkId: string,
+  userRole: TUserRoleType,
+): boolean {
+  if (userRole === 'cluster_god') {
+    return true;
+  }
+  if (this.owner.owner_id === clerkId) {
+    return true;
+  }
+  if (this.investors.includes(clerkId)) {
+    return true;
+  }
+  return false;
+};
+
+// Get user's access level for this specific project
+clusterProjectSchema.methods.getUserAccessLevel = function (
+  clerkId: string,
+  userRole: TUserRoleType,
+): 'owner' | 'investor' | 'none' {
+  if (userRole === 'cluster_god' || this.owner.owner_id === clerkId) {
+    return 'owner';
+  }
+
+  // ✅ Check project-specific investor status
+  if (this.isInvestor(clerkId)) {
+    return 'investor';
+  }
+
+  return 'none';
+};
+
+clusterProjectSchema.methods.canInviteEmail = async function (
+  email: string,
+): Promise<{
+  canInvite: boolean;
+  reason?: string;
+}> {
+  try {
+    const normalizedEmail = email.toLowerCase().trim();
+
+    const ownerUser = await clerkClient.users.getUser(this.owner.owner_id);
+    const primaryEmail =
+      ownerUser.emailAddresses.find(
+        (addr) => addr.id === ownerUser.primaryEmailAddressId,
+      ) ?? ownerUser.emailAddresses[0];
+    const ownerPrimaryEmail = primaryEmail?.emailAddress?.toLowerCase().trim();
+
+    if (ownerPrimaryEmail && ownerPrimaryEmail === normalizedEmail) {
+      return { canInvite: false, reason: 'CANNOT_INVITE_PROJECT_OWNER' };
+    }
+
+    const inviteeList = await clerkClient.users.getUserList({
+      emailAddress: [normalizedEmail],
+      limit: 1,
+    });
+    const inviteeClerkId = inviteeList.data[0]?.id;
+
+    if (inviteeClerkId && this.investors.includes(inviteeClerkId)) {
+      return { canInvite: false, reason: 'INVESTOR_ALREADY_ADDED' };
+    }
+
+    return { canInvite: true };
+  } catch (error) {
+    throw new AppError('INVITATION_VALIDATION_FAILED', STATUSES.SERVER_ERROR);
+  }
+};
+
+clusterProjectSchema.index({ investors: 1 });
+clusterProjectSchema.index({ owner: 1, investors: 1 });
+clusterProjectSchema.index({ investors: 1, _id: 1 });
 
 const ClusterProject = mongoose.model<IClusterProjectSchema>(
   'ClusterProject',

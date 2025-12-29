@@ -13,6 +13,14 @@ const userSchema = new mongoose.Schema<IUserSchema>(
       required: true,
       unique: true,
     },
+    user_name: {
+      type: String,
+      trim: true,
+    },
+    user_email: {
+      type: String,
+      trim: true,
+    },
   },
   {
     timestamps: true,
@@ -24,7 +32,7 @@ const userSchema = new mongoose.Schema<IUserSchema>(
 // virtual populate for projects
 userSchema.virtual('cluster_projects', {
   ref: 'ClusterProject',
-  foreignField: 'owner',
+  foreignField: 'owner.owner_id',
   localField: 'clerk_id',
   justOne: false,
 });
