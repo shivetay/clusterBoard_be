@@ -15,7 +15,7 @@ export const inviteInvestor = async (
   next: NextFunction,
 ) => {
   try {
-    const { project_id, invitee_email, message } = req.body;
+    const { project_id, invitee_email } = req.body;
 
     // Validate input
     if (!project_id || !invitee_email) {
@@ -56,7 +56,6 @@ export const inviteInvestor = async (
 
     res.status(STATUSES.CREATED).json({
       status: 'success',
-
       message: 'INVITATION_SENT',
     });
   } catch (error) {
@@ -148,12 +147,11 @@ export const acceptInvitation = async (
     }
 
     // Use service layer (or model directly)
-    const { project, alreadyInvestor } =
-      await InvitationService.acceptInvitation(
-        token,
-        req.clerkUserId,
-        clerkUser.emailAddresses[0]?.emailAddress,
-      );
+    const { alreadyInvestor } = await InvitationService.acceptInvitation(
+      token,
+      req.clerkUserId,
+      clerkUser.emailAddresses[0]?.emailAddress,
+    );
 
     res.status(STATUSES.SUCCESS).json({
       status: 'success',
@@ -216,30 +214,46 @@ export const getProjectInvitations = async (
     );
 
     // Get recipient names by looking up users by email
-    const invitationsWithRecipientNames = await Promise.all(
-      invitations.map(async (invitation) => {
-        const invitationObj = invitation.toObject();
-
-        // Add inviter name if populated
-        if (invitationObj.inviter?.user_name) {
-          invitationObj.inviter_name = invitationObj.inviter.user_name;
-        }
-        // Remove inviter object to keep response clean
-        delete invitationObj.inviter;
-
-        // Look up user by email to get recipient name
-        const recipientUser = await User.findOne({
-          user_email: invitation.invitee_email.toLowerCase().trim(),
-        });
-
-        // Add recipient name if found
-        if (recipientUser?.user_name) {
-          invitationObj.recipient_name = recipientUser.user_name;
-        }
-
-        return invitationObj;
-      }),
+    const inviteeEmailSet = new Set(
+      invitations
+        .map((invitation) => invitation.invitee_email)
+        .filter((email) => typeof email === 'string')
+        .map((email) => email.toLowerCase().trim()),
     );
+    const inviteeEmails = Array.from(inviteeEmailSet);
+    const recipientUsers = inviteeEmails.length
+      ? await User.find({
+          user_email: { $in: inviteeEmails },
+        })
+      : [];
+    const recipientUserByEmail = new Map(
+      recipientUsers.map((user) => [
+        typeof user.user_email === 'string'
+          ? user.user_email.toLowerCase().trim()
+          : '',
+        user,
+      ]),
+    );
+    const invitationsWithRecipientNames = invitations.map((invitation) => {
+      const invitationObj = invitation.toObject();
+      // Add inviter name if populated
+      if (invitationObj.inviter?.user_name) {
+        invitationObj.inviter_name = invitationObj.inviter.user_name;
+      }
+      // Remove inviter object to keep response clean
+      delete invitationObj.inviter;
+      // Look up user by email to get recipient name from preloaded users
+      const normalizedEmail =
+        typeof invitation.invitee_email === 'string'
+          ? invitation.invitee_email.toLowerCase().trim()
+          : '';
+      const recipientUser = recipientUserByEmail.get(normalizedEmail);
+      // Add recipient name if found
+      if (recipientUser?.user_name) {
+        invitationObj.recipient_name = recipientUser.user_name;
+      }
+      return invitationObj;
+    });
 
     res.status(STATUSES.SUCCESS).json({
       status: 'success',

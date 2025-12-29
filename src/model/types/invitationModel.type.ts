@@ -20,6 +20,9 @@ export interface IInvitationSchema extends Document {
   updatedAt: Date;
   project?: mongoose.Types.ObjectId;
   inviter?: mongoose.Types.ObjectId;
+  email_send_failed?: boolean;
+  last_email_error?: string;
+  last_email_error_at?: Date;
   isValid: () => boolean;
   accept: () => Promise<void>;
   cancel: () => Promise<void>;

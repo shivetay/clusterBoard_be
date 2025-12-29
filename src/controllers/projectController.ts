@@ -106,6 +106,7 @@ export const getAllUserProjects = async (
       return;
     }
 
+    // TODO may influence viewing projects
     const projects = await ClusterProject.find({
       $or: [
         { 'owner.owner_id': req.clerkUserId },

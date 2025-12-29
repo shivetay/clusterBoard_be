@@ -79,12 +79,6 @@ export const sendEmail = async (options: TEmailOptions) => {
       stack: error instanceof Error ? error.stack : undefined,
       to: options.to,
       subject: options.subject,
-      emailConfig: {
-        host: process.env.EMAIL_HOST,
-        port: process.env.EMAIL_PORT,
-        user: process.env.EMAIL_USER,
-        hasPassword: !!process.env.EMAIL_PASS,
-      },
     });
     throw error;
   }

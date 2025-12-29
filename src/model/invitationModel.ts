@@ -61,6 +61,16 @@ const invitationSchema = new mongoose.Schema(
       trim: true,
       maxlength: 500,
     },
+    email_send_failed: {
+      type: Boolean,
+      default: false,
+    },
+    last_email_error: {
+      type: String,
+    },
+    last_email_error_at: {
+      type: Date,
+    },
   },
   {
     timestamps: true,

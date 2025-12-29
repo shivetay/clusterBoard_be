@@ -33,9 +33,11 @@ export const removeInvestorFromProject = async (
       return;
     }
 
-    if (investorId) {
-      await project.removeInvestor(investorId);
+    if (!investorId || !investorId.trim()) {
+      next(new AppError('INVESTOR_ID_REQUIRED', STATUSES.BAD_REQUEST));
+      return;
     }
+    await project.removeInvestor(investorId);
 
     res.status(STATUSES.SUCCESS).json({
       status: 'success',
