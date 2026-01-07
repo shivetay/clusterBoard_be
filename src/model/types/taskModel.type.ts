@@ -5,5 +5,8 @@ export interface IStageTaskSchema extends Document {
   task_name: string;
   task_description?: string;
   is_done: boolean;
+  is_edited?: boolean;
+  createdAt: Date;
+  updatedAt: Date;
   owner: string;
 }

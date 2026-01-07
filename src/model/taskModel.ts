@@ -25,6 +25,10 @@ const taskSchema = new mongoose.Schema(
       ref: 'User',
       required: true,
     },
+    is_edited: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,
@@ -32,6 +36,13 @@ const taskSchema = new mongoose.Schema(
     toObject: { virtuals: true },
   },
 );
+
+taskSchema.virtual('task_comments', {
+  ref: 'Comment',
+  foreignField: 'task_id',
+  localField: '_id',
+  justOne: false,
+});
 
 const Task = mongoose.model('Task', taskSchema);
 
