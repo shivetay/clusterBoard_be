@@ -1,5 +1,7 @@
+import { clerkClient } from '@clerk/express';
 import type { NextFunction, Request, Response } from 'express';
 import Comment from '../model/commentsModel';
+import ProjectStages from '../model/stageModel';
 import Task from '../model/taskModel';
 import { filterAllowedFields, STATUSES } from '../utils';
 import AppError from '../utils/appError';
@@ -10,8 +12,19 @@ export const createComment = async (
   next: NextFunction,
 ) => {
   try {
-    const { author, author_name, comment_text } = req.body;
-    const { taskId } = req.params;
+    const { comment_text } = req.body;
+    const { taskId, stageId } = req.params;
+
+    if (!req.user || !req.clerkUserId) {
+      next(new AppError('AUTH_ERROR_USER_NOT_FOUND', STATUSES.UNAUTHORIZED));
+      return;
+    }
+
+    const clerkUser = await clerkClient.users.getUser(req.clerkUserId);
+
+    const userFullName = `${clerkUser.firstName || ''} ${
+      clerkUser.lastName || ''
+    }`.trim();
 
     const checkTask = await Task.findById(taskId);
 
@@ -20,12 +33,23 @@ export const createComment = async (
       return;
     }
 
+    const checkStage = await ProjectStages.findById(stageId);
+
+    if (!checkStage) {
+      next(new AppError('STAGE_NOT_FOUND', STATUSES.NOT_FOUND));
+      return;
+    }
+
+    if (typeof comment_text !== 'string' || comment_text.trim().length === 0) {
+      next(new AppError('COMMENT_TEXT_REQUIRED', STATUSES.BAD_REQUEST));
+      return;
+    }
+
     const newComment = await Comment.create({
-      author,
-      author_name,
+      author: req.clerkUserId,
+      author_name: userFullName,
       task_id: taskId,
       comment_text,
-      is_edited: false,
     });
 
     res.status(STATUSES.CREATED).json({
@@ -51,12 +75,12 @@ export const editComment = async (
   try {
     const { commentId } = req.params;
 
-    const removeUnmutableData = filterAllowedFields(req.body, 'comment_text');
+    const allowedFields = filterAllowedFields(req.body, 'comment_text');
 
     const comment = await Comment.findByIdAndUpdate(
       commentId,
       {
-        ...removeUnmutableData,
+        ...allowedFields,
         is_edited: true,
       },
       { new: true, runValidators: true },
@@ -67,7 +91,7 @@ export const editComment = async (
       return;
     }
 
-    res.status(STATUSES.CREATED).json({
+    res.status(STATUSES.SUCCESS).json({
       status: 'success',
       data: {
         comment: {

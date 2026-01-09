@@ -22,7 +22,7 @@ router
 // PATCH edit & DELETE comment
 router
   .route('/:commentId')
-  .patch(requireAuth, checkCommentAuthor, requireOwnerOrGod, editComment)
-  .delete(requireAuth, checkCommentAuthor, requireOwnerOrGod, deleteComment);
+  .patch(requireAuth, checkCommentAuthor, editComment)
+  .delete(requireAuth, checkCommentAuthor, deleteComment);
 
 export default router;
