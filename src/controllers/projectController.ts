@@ -52,11 +52,15 @@ export const getProjectById = async (
       return;
     }
 
+    // Populate all virtual fields
     const project = await ClusterProject.findById(id)
       .populate({
         path: 'project_stages',
         populate: {
           path: 'stage_tasks',
+          populate: {
+            path: 'task_comments',
+          },
         },
       })
       .populate({

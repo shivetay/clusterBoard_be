@@ -176,7 +176,6 @@ invitationSchema.statics.findPendingByEmail = function (email: string) {
   });
 };
 
-// ⭐ RECOMMENDED: Static method to create invitation with validation
 invitationSchema.statics.createInvitation = async function (
   projectId: mongoose.Types.ObjectId,
   inviterId: string,

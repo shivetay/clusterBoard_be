@@ -24,4 +24,5 @@ export const LOCALES = {
   TASKS_ADDED_TO_STAGE: 'Tasks added to stage successfully',
   AT_LEAST_ONE_TASK_REQUIRED: 'At least one task is required',
   INVALID_TASKS_FORMAT: 'Invalid tasks format',
+  COMMENT_MAX_LENGTH: 'Comment must be less than 250 characters long',
 };

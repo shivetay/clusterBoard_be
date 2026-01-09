@@ -1,3 +1,4 @@
+export * from './commentsModel.type';
 export * from './invitationModel.type';
 export * from './projectModel.type';
 export * from './projectStagesModel.type';

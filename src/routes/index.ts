@@ -1,3 +1,4 @@
+import commentsRoutes from './commentsRoutes';
 import investorRoutes from './investorRoutes';
 import invitationRoutes from './invitationRoutes';
 import projectRoutes from './projectRoutes';
@@ -14,4 +15,5 @@ export {
   tasksRoutes,
   stageRoutes,
   investorRoutes,
+  commentsRoutes,
 };

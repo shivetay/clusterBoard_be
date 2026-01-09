@@ -1,4 +1,5 @@
 import type { NextFunction, Request, Response } from 'express';
+import Comment from '../model/commentsModel';
 import ClusterProject from '../model/projectModel';
 import ProjectStages from '../model/stageModel';
 import Task from '../model/taskModel';
@@ -141,7 +142,7 @@ export const updateTask = async (
 };
 
 // DELETE task
-// TODO dodanie usuniecia komentarzy oraz taskow od usera
+
 export const deleteTask = async (
   req: Request,
   res: Response,
@@ -184,7 +185,7 @@ export const deleteTask = async (
       next(ownershipError);
       return;
     }
-
+    await Comment.deleteMany({ task_id: taskId });
     await Task.findByIdAndDelete(taskId);
 
     res.status(STATUSES.SUCCESS).json({

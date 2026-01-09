@@ -11,6 +11,7 @@ import morgan from 'morgan';
 import { errorController } from './controllers/errorController';
 import {
   clerkWebhookRouter,
+  commentsRoutes,
   investorRoutes,
   invitationRoutes,
   projectRoutes,
@@ -89,6 +90,7 @@ app.use('/api/v1/tasks', tasksRoutes);
 app.use('/api/v1/stages', stageRoutes);
 app.use('/api/v1/invitations', invitationRoutes);
 app.use('/api/v1/investors', investorRoutes);
+app.use('/api/v1/comments', commentsRoutes);
 
 app.use((req: Request, _res: Response, next: NextFunction) => {
   next(
