@@ -12,6 +12,7 @@ import { errorController } from './controllers/errorController';
 import {
   clerkWebhookRouter,
   commentsRoutes,
+  fileRoutes,
   investorRoutes,
   invitationRoutes,
   projectRoutes,
@@ -91,6 +92,7 @@ app.use('/api/v1/stages', stageRoutes);
 app.use('/api/v1/invitations', invitationRoutes);
 app.use('/api/v1/investors', investorRoutes);
 app.use('/api/v1/comments', commentsRoutes);
+app.use('/api/v1/files', fileRoutes);
 
 app.use((req: Request, _res: Response, next: NextFunction) => {
   next(

@@ -1,4 +1,5 @@
 import type { NextFunction, Request, Response } from 'express';
+import File from '../model/fileSchemaModel';
 import ClusterProject from '../model/projectModel';
 import ProjectStages from '../model/stageModel';
 import Task from '../model/taskModel';
@@ -123,8 +124,8 @@ export const getAllUserProjects = async (
 
     const projectsWithAccess = projects.map((project) => {
       const accessLevel = project.getUserAccessLevel(
-        req.clerkUserId!,
-        req.user!.role,
+        req.clerkUserId as string,
+        req.user?.role ?? 'investor',
       );
 
       return {
@@ -306,6 +307,30 @@ export const deleteProject = async (
         ),
       );
       return;
+    }
+
+    const projectFiles = await File.find({
+      project_id: id,
+      is_deleted: false,
+    });
+
+    // Soft delete all files
+    for (const file of projectFiles) {
+      await file.softDelete();
+      // TODO for future s3
+      // For S3 storage, optionally delete from S3 as well
+      // if (file.storage_type === 's3' && file.file_path) {
+      //   try {
+      //     await deleteFileFromS3(file.file_path);
+      //   } catch (error) {
+      //     // Log error but don't fail project deletion
+      //     console.error(
+      //       `Failed to delete file from S3: ${file.file_path}`,
+      //       error,
+      //     );
+      //   }
+      // }
+      // For MongoDB document storage, file_data is automatically soft-deleted with the document
     }
 
     const deletedProject = await ClusterProject.findByIdAndDelete(id);
